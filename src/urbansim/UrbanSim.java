@@ -16,7 +16,7 @@ import sim.field.continuous.*;
 import sim.field.grid.DoubleGrid2D;
 import sim.field.grid.SparseGrid2D;
 
-public class UrbanSim extends SimState implements VehicleLifecycleObserver {
+public class UrbanSim extends SimState implements VehicleLifecycleObserver, Steppable {
 
 	private void getBounds() {
 
@@ -30,42 +30,47 @@ public class UrbanSim extends SimState implements VehicleLifecycleObserver {
 	public int numAgents = 5;
 	public ParallelSequence SAgents;
 	public TraCI traci;
-	
-	//Map SUMO strings to agents
-	public Map<String,Agent> mobileAgents = new HashMap<String,Agent>();
+	public Observer observer;
+	// Array of all agents
+		Agent[] agents;	
+
+	// Map SUMO strings to agents
+	public Map<String, Agent> mobileAgents = new HashMap<String, Agent>();
 	public List<Agent> stationaryAgents = new ArrayList<Agent>();
-	
-	public UrbanSim(long seed) {	
+	public List<Agent> allAgents = new ArrayList<Agent>();
+
+	public UrbanSim(long seed) {
 
 		super(seed);
-		agents = new Agent[numAgents];
+		//agents = new Agent[numAgents];
 	}
+
 	
-	//Array of all agents
-	Agent[] agents;
 
 	// Setup the simulation here
 	public void start() {
 		super.start();
-		schedule.clear();
-		
-		agentPos.clear();	
+		schedule.reset();
+
+		agentPos.clear();
 		mobileAgents.clear();
 		stationaryAgents.clear();
-		if(traci != null){
+		if (traci != null) {
 			traci.close();
 			System.out.println("Close");
 		}
-		
-		
-		
-		//Create the motion aware stepper
+
+		// Create the motion aware stepper
 		traci = new TraCI();
 		traci.addVehicleLifecycleObserver(this);
+
+		// Create observer
+		observer = new Observer();
+	
+		step(this);
 		
-		schedule.scheduleRepeating(Schedule.EPOCH,traci);
-		
-		
+		schedule.scheduleRepeating(this);
+
 		System.out.println();
 	}
 
@@ -74,68 +79,77 @@ public class UrbanSim extends SimState implements VehicleLifecycleObserver {
 		System.exit(0);
 
 	}
+
 	
-	//re-create the schedule
-	private void reshedule(){
-		schedule.clear();
+	
+
+	// create the schedule
+	public void step(SimState state) {
+		UrbanSim urbansim = (UrbanSim) state;
+
+		// Update Positions
+		state.schedule.scheduleOnce(urbansim.traci);
+
+		//Must simulate atleast one Agent
+		if (urbansim.allAgents.size() > 0) {
+			// Create agent array for parallel
+			agents = urbansim.allAgents.toArray(new Agent[urbansim.allAgents
+					.size()]);
+
+			// create parallel for faster processing
+			urbansim.SAgents = new ParallelSequence(agents, 8);
 		
-		
-		Agent[] magent = mobileAgents.values().toArray(new Agent[mobileAgents.size()]); 
-		Agent[] sagent = stationaryAgents.toArray(new Agent[stationaryAgents.size()]);
-		//Create agent array for parallel
-		agents = new Agent[magent.length + sagent.length];
-		
-		System.arraycopy(magent,0,agents,0,magent.length);
-		System.arraycopy(sagent,0,agents,magent.length,sagent.length);
-				
-		
-		//create parallel
-		SAgents = new ParallelSequence(agents,8);
-		
-		
-		//Setup the call schedule for all agents
-		schedule.scheduleRepeating(SAgents);
-		
-		
-		schedule.scheduleRepeating(traci);
-		
+		// Step Agents
+		urbansim.schedule.scheduleOnce(urbansim.SAgents);
+		}	
+		// Log Data
+		state.schedule.scheduleOnce(urbansim.observer);
+
 	}
+	
 	
 	
 	
 	@Override
-	//Vehicle was created by sumo
+	// Vehicle was created by sumo
 	public void vehicleDeparted(Vehicle vehicle) {
 		System.out.println("new Vehicle:" + vehicle.getID());
-		//Get position
-		Point2D pos = new Point2D.Double();		
-		//Create new agent
-		Agent tmp = new Agent();		
+		// Get position
+		Point2D pos = new Point2D.Double();
+
+		// Create new agent
+		Agent tmp = new Agent();
 		tmp.v = vehicle;
-		//Add agent to mobile agent list
-		mobileAgents.put(vehicle.getID(),tmp);		
-		reshedule();
+
+		// Add agent to mobile agent list
+		mobileAgents.put(vehicle.getID(), tmp);
+
+		// Add agent to all list
+		allAgents.add(tmp);
 		
 	}
 
-	//Vehicle was destroyed by sumo
+	// Vehicle was destroyed by sumo
 	public void vehicleArrived(Vehicle vehicle) {
 		System.out.println("dead Vehicle");
+		// Remove from arrays
 		Agent tmp = mobileAgents.remove(vehicle.getID());
-		//Remove from graphic
+		allAgents.remove(tmp);
+		
+		// Remove from graphic
 		agentPos.remove(tmp);
-		reshedule();
+
 	}
 
 	@Override
 	public void vehicleTeleportStarting(Vehicle vehicle) {
-		// TODO Auto-generated method stub		
+		// TODO Auto-generated method stub
 	}
+
 	@Override
 	public void vehicleTeleportEnding(Vehicle vehicle) {
 		// TODO Auto-generated method stub
-		
+
 	}
-	
 
 }

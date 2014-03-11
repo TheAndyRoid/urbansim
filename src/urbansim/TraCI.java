@@ -36,7 +36,7 @@ public class TraCI implements Steppable{
 			
 			System.out.println("Map bounds are: " + conn.queryBounds());
 			
-		/*	for (int i = 0; i < 4; i++) {
+			/*for (int i = 0; i < 4; i++) {
 				int time = conn.getCurrentSimStep();
 				Collection<Vehicle> vehicles = conn.getVehicleRepository().getAll().values();
 				
@@ -109,8 +109,8 @@ public class TraCI implements Steppable{
 							)						
 					)	;
 		}
-		
-		
+		System.out.println("Updating Positions done!");
+				
 	}
 	public void close(){
 		try {
