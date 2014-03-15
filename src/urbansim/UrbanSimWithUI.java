@@ -54,7 +54,7 @@ public class UrbanSimWithUI extends GUIState {
 		UrbanSim urbanSim = (UrbanSim) state;
 		// Setup what and how to portray agents
 		agentPortrayal.setField(urbanSim.agentPos);
-		agentPortrayal.setPortrayalForAll(new OvalPortrayal2D());
+		agentPortrayal.setPortrayalForAll(new OvalPortrayal2D(8));
 
 		// reschedule the displayer
 		display.reset();
