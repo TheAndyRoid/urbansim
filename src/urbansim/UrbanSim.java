@@ -53,7 +53,7 @@ public class UrbanSim extends SimState implements VehicleLifecycleObserver,
 	private int simulationDurationSeconds;
 	private int stepDelta;
 	private int deltasPerFile;
-	
+	private long nextAgentID = 0;
 	
 	
 	
@@ -91,6 +91,9 @@ public class UrbanSim extends SimState implements VehicleLifecycleObserver,
 		// Read in simulation settings
 		readSimulationSettings("/home/andyroid/uni/cs4526/Application/test/caseFile/case.xml");
 
+		//Read in static agents
+		loadStaticAgent(staticAgentFile);
+		
 		// Create the motion aware stepper
 		traci = new TraCI();
 		traci.addVehicleLifecycleObserver(this);
@@ -143,7 +146,8 @@ public class UrbanSim extends SimState implements VehicleLifecycleObserver,
 		Point2D pos = new Point2D.Double();
 
 		// Create new agent
-		Agent tmp = new Agent();
+		Agent tmp = new Agent("mobile",nextAgentID);
+		nextAgentID++;
 		tmp.v = vehicle;
 
 		// Add agent to mobile agent list
@@ -177,12 +181,78 @@ public class UrbanSim extends SimState implements VehicleLifecycleObserver,
 
 	}
 
-	private int readInt(String name,Element root){		
+	static public int readElementInt(String name,Element root){		
 		return Integer.parseInt(root.getElementsByTagName(name).item(0).getTextContent());		
 	}
-	private String readString(String name,Element root){		
+	static public String readElementString(String name,Element root){		
 		return root.getElementsByTagName(name).item(0).getTextContent();		
 	}
+	static public Double readElementDouble(String name,Element root){		
+		return Double.parseDouble(root.getElementsByTagName(name).item(0).getTextContent());		
+	}
+	
+	static public Long readAttributeLong(String name,Element root){		
+		return Long.parseLong(root.getAttribute(name));		
+	}
+	
+	static public String readAttributeString(String name,Element root){		
+		return root.getAttribute(name);		
+	}
+	
+	static public Double readAttributeDouble(String name,Element root){		
+		return Double.parseDouble(root.getAttribute(name));		
+	}
+	static public Double2D readAttributeDouble2D(Element root){
+		return new Double2D(
+				readAttributeDouble("x",root),
+				readAttributeDouble("y",root)				
+		 );		
+	}
+	
+	
+	
+	
+	private void loadStaticAgent(String filePath){
+		try {
+
+			File fXmlFile = new File(filePath);
+			DocumentBuilderFactory dbFactory = DocumentBuilderFactory
+					.newInstance();
+			DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
+			Document doc = dBuilder.parse(fXmlFile);
+
+			doc.getDocumentElement().normalize();
+
+			NodeList nList = doc.getElementsByTagName("agent");	
+			
+			for(int i = 0; i<nList.getLength();i++){
+				Node nNode = nList.item(i);
+				if (nNode.getNodeType() == Node.ELEMENT_NODE) {
+					Element e = (Element) nNode;
+					
+					// Create new agent
+					Agent tmp = new Agent(e,this);
+					
+					// Add agent to static agent list
+					stationaryAgents.add(tmp);
+
+					// Add agent to all list
+					allAgents.add(tmp);
+				}
+				
+			}
+		
+			
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+		
+		
+		
+	}
+	
 	
 	
 	private boolean readSimulationSettings(String filePath) {
@@ -200,16 +270,16 @@ public class UrbanSim extends SimState implements VehicleLifecycleObserver,
 			Element root = doc.getDocumentElement();
 
 			//read in the elements
-			caseDir  = readString("caseDir",root);
-			sumoFile  = readString("sumoFile",root);
-			sumoServer  = readString("sumoServer",root);
-			deltasPerFile  = readInt("deltasPerFile",root);
+			caseDir  = readElementString("caseDir",root);
+			sumoFile  = readElementString("sumoFile",root);
+			sumoServer  = readElementString("sumoServer",root);
+			deltasPerFile  = readElementInt("deltasPerFile",root);
 			System.out.println(deltasPerFile);
 			
-			staticAgentFile = readString("staticAgentFile",root);
-			agentConfigFile= readString("agentConfigFile",root);
-			simulationDurationSeconds= readInt("simulationDurationSeconds",root);
-			stepDelta= readInt("stepDelta",root);		
+			staticAgentFile = caseDir +"/" +readElementString("staticAgentFile",root);
+			agentConfigFile= readElementString("agentConfigFile",root);
+			simulationDurationSeconds= readElementInt("simulationDurationSeconds",root);
+			stepDelta= readElementInt("stepDelta",root);		
 		
 			
 

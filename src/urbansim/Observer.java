@@ -87,7 +87,7 @@ public class Observer implements Steppable {
 		stepElement.setAttributeNode(attr);
 
 		for (Agent a : urbansim.allAgents) {
-			writeAgent(a, stepElement);
+			Agent.writeAgent(a, stepElement, doc);
 		}
 
 		if ((state.schedule.getTime() % (deltasPerFile + 1)) == 0) {
@@ -124,19 +124,6 @@ public class Observer implements Steppable {
 
 	}
 
-	private void writeAgent(Agent agent, Element stepRoot) {
-		// staff elements
-		Element agentElement = doc.createElement("Agent");
-		stepRoot.appendChild(agentElement);
-
-		// set attribute to staff element
-		Attr attr = doc.createAttribute("id");
-		attr.setValue("Agent@" + System.identityHashCode(agent));
-		agentElement.setAttributeNode(attr);
-
-		// shorten way
-		// staff.setAttribute("id", "1");
-
-	}
+	
 
 }

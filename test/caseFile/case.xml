@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+<simulation>
+  <caseDir>/home/andyroid/uni/cs4526/Application/test/caseFile</caseDir>
+  <sumoFile>./sumoconfig.xml</sumoFile>
+  <sumoServer>127.0.0.1</sumoServer>
+  <staticAgentFile>staticAgents.xml</staticAgentFile>
+  <agentConfigFile>Agent.xml</agentConfigFile>
+  <saveDirectory>/</saveDirectory>
+  <simulationDurationSeconds>50000</simulationDurationSeconds>
+  <stepDelta>1000</stepDelta>
+  <deltasPerFile>60</deltasPerFile>
+</simulation>
