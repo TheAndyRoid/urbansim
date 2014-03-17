@@ -12,10 +12,12 @@ import java.util.Map;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.DocumentBuilder;
+
 import org.w3c.dom.Document;
 import org.w3c.dom.NodeList;
 import org.w3c.dom.Node;
 import org.w3c.dom.Element;
+
 import java.io.File;
 
 import sim.engine.*;
@@ -128,7 +130,7 @@ public class UrbanSim extends SimState implements VehicleLifecycleObserver,
 					.size()]);
 
 			// create parallel for faster processing
-			urbansim.SAgents = new ParallelSequence(agents, 8);
+			urbansim.SAgents = new ParallelSequence(agents, 16);
 
 			// Step Agents
 			urbansim.schedule.scheduleOnce(urbansim.SAgents);
@@ -146,7 +148,7 @@ public class UrbanSim extends SimState implements VehicleLifecycleObserver,
 		Point2D pos = new Point2D.Double();
 
 		// Create new agent
-		Agent tmp = new Agent("mobile",nextAgentID);
+		Agent tmp = new Agent("mobile",nextAgentID,this);
 		nextAgentID++;
 		tmp.v = vehicle;
 
@@ -238,8 +240,7 @@ public class UrbanSim extends SimState implements VehicleLifecycleObserver,
 
 					// Add agent to all list
 					allAgents.add(tmp);
-				}
-				
+				}				
 			}
 		
 			
@@ -290,5 +291,19 @@ public class UrbanSim extends SimState implements VehicleLifecycleObserver,
 		return true;
 
 	}
+	//Calculate agents in range
+	public List<Device> inRange(Agent agent){
+		List<Device> agentsInRange = new ArrayList<Device>();
+		Double2D aPos = agent.currentPosition();
+		double dist = 50;
+		for(Agent a:allAgents){
+			if(aPos.distance(a.currentPosition())<=dist){
+				agentsInRange.add(a);
+			}
+		}
+		return agentsInRange;
+	}
+	
+	
 
 }

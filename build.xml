@@ -26,9 +26,27 @@
         <pathelement location="../../../../../Simulator/lib/mason/lib/vecmath.jar"/>
         <pathelement location="../../../../../Simulator/lib/mason/jar/mason.jar"/>
     </path>
+    <path id="TraCI4J.userclasspath">
+        <pathelement location="../../../../../Simulator/lib/TraCI4J/bin/TraCI4J.jar"/>
+        <pathelement location="../../../../../Simulator/lib/TraCI4J/lib/junit.jar"/>
+        <pathelement location="../../../../../Simulator/lib/TraCI4J/lib/log4j.jar"/>
+        <pathelement location="../../../../../Simulator/lib/TraCI4J/lib/org.hamcrest.core_1.1.0.v20090501071000.jar"/>
+        <pathelement location="../../../../../Simulator/lib/TraCI4J/lib/xercesImpl.jar"/>
+    </path>
+    <path id="continuations-java.userclasspath">
+        <pathelement location="../../../../../Simulator/lib/continuations-java/dist/Continuations.jar"/>
+        <pathelement location="../../../../../Simulator/lib/continuations-java/lib/ant.jar"/>
+        <pathelement location="../../../../../Simulator/lib/continuations-java/lib/asm-all-4.0.jar"/>
+    </path>
     <path id="Simulator.classpath">
         <pathelement location="jar/"/>
         <path refid="MASON.userclasspath"/>
+        <path refid="TraCI4J.userclasspath"/>
+        <path refid="continuations-java.userclasspath"/>
+    </path>
+    <path id="run.Console.classpath">
+        <path refid="Simulator.classpath"/>
+        <pathelement location="."/>
     </path>
     <target name="init">
         <mkdir dir="jar/"/>
@@ -67,9 +85,18 @@
         <antcall target="build"/>
     </target>
     <target name="Console">
-        <java classname="mousetraps3d.MouseTraps3DWithUI" failonerror="true" fork="yes">
-            <jvmarg line="-Xmx300m"/>
-            <classpath refid="Simulator.classpath"/>
+        <java classname="urbansim.UrbanSimWithUI" failonerror="true" fork="yes">
+            <jvmarg line="-Xmx300m&#10;-Dit.polito.appeal.traci.tcp_nodelay=true"/>
+            <classpath refid="run.Console.classpath"/>
         </java>
     </target>
+              	 <taskdef name="continuations"
+              	       classname="de.matthiasmann.continuations.instrument.InstrumentationTask"
+              	     classpath="lib/continuations-java/lib/asm-all-4.0.jar:lib/continuations-java/dist/Continuations.jar:lib/continuations-java/build/classes:jar/urbansim"/>
+              	    
+              	    <target name="-post-compile">
+              	      <continuations verbose="true">
+              	        <fileset dir="Simulator/jar"/>
+              	      </continuations>
+              	    </target>
 </project>
