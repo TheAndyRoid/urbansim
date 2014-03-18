@@ -1,7 +1,5 @@
 package urbansim;
 
-
-
 import java.awt.geom.Point2D;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -22,7 +20,8 @@ import sim.field.continuous.*;
 import urbansim.p2p.PeerComponent;
 import urbansim.physical.PhysicalComponent;
 
-public class Agent implements Steppable, PhysicalComponent, Device {
+public class Agent implements Steppable, PhysicalComponent, Device,
+		CoroutineProto {
 
 	public PhysicalComponent phy;
 	public PeerComponent p2p;
@@ -31,30 +30,37 @@ public class Agent implements Steppable, PhysicalComponent, Device {
 	private String agentType;
 	private long agentID;
 	private SimState simState;
-	private MyAgent userAgent; 
-	 
+	private DeviceAgent userAgent;
 
-	//java-continuation
+	private int sleepTime = 0;
+
+	// java-continuation
 	private Coroutine co;
-	
-	
+
 	private Queue<Message> sendBuffer = new LinkedList<Message>();
 	private Queue<Message> recvBuffer = new LinkedList<Message>();
+	
 
 	public Agent(String type, long id, SimState state) {
+
 		simState = state;
 		this.agentType = type;
-		this.agentID = id;		
+		this.agentID = id;
 		userAgent = new MyAgent(this);
-		co = new Coroutine(userAgent);
-		
+		co = new Coroutine(this);
+		UrbanSim urbansim = (UrbanSim) simState;
+		urbansim.connected.addNode(this);
+
 	}
 
 	public Agent(Element agentElement, SimState state) {
+
 		simState = state;
 		readAgent(agentElement, state);
 		userAgent = new MyAgent(this);
-		co = new Coroutine(userAgent);
+		co = new Coroutine(this);
+		UrbanSim urbansim = (UrbanSim) simState;
+		urbansim.connected.addNode(this);
 	}
 
 	public String getType() {
@@ -63,6 +69,10 @@ public class Agent implements Steppable, PhysicalComponent, Device {
 
 	public long getID() {
 		return agentID;
+	}
+
+	public String getName() {
+		return new String(agentType + "@" + agentID);
 	}
 
 	public Agent(SimState state, Double2D position) {
@@ -77,17 +87,18 @@ public class Agent implements Steppable, PhysicalComponent, Device {
 	public void setPosition(SimState state, Double2D newPosition) {
 		positionActual = newPosition;
 		UrbanSim urbansim = (UrbanSim) state;
+		Double2D pos = new Double2D(newPosition.getX(), newPosition.getY());
+		urbansim.agentPos.setObjectLocation(this, pos);
 
-		urbansim.agentPos.setObjectLocation(this,
-				new Double2D(newPosition.getX(), newPosition.getY()));
 	}
 
-	
-
-	
 	// Called by MASON
 	public void step(SimState state) {
-		co.run();		
+		if (sleepTime == 0) {
+			co.run();
+		} else {
+			sleepTime--;
+		}
 	}
 
 	// Write to file
@@ -123,8 +134,10 @@ public class Agent implements Steppable, PhysicalComponent, Device {
 
 	// Add message to send buffer
 	private void receive(Message msg) {
+		UrbanSim urbansim = (UrbanSim) simState;
+		urbansim.observer.logMessage(msg);
 		synchronized (recvBuffer) {
-			// System.out.println("Device Got Message!");
+			//System.out.println("Device Got Message!");
 			recvBuffer.add(msg);
 		}
 
@@ -143,20 +156,50 @@ public class Agent implements Steppable, PhysicalComponent, Device {
 	public Message recv() {
 		Message msg;
 		synchronized (recvBuffer) {
-			if (!recvBuffer.isEmpty()) {
-				msg = recvBuffer.remove();
-
-			} else {
+			if (recvBuffer.isEmpty()) {
+				//System.out.println("Empty Buffer");
 				msg = null;
+			} else {
+				//System.out.println("Got a message");
+				msg = recvBuffer.remove();
+				
 			}
 		}
 		return msg;
 	}
 
+	// This is for the hack cast I'm aware, its bad but needed
+	@SuppressWarnings("unchecked")
 	public List<Device> scan() {
 		UrbanSim urbansim = (UrbanSim) simState;
-		return urbansim.inRange(this);
+		List<Agent> inRange = urbansim.inRange(this);
+		// Have to sync on network or bad things happen
+		synchronized (urbansim.connected) {
+			// clear the old connections
+			urbansim.connected.removeNode(this);
+			// add ourself back to the network
+			urbansim.connected.addNode(this);
+			// recreate edges
+			for (Agent a : inRange) {
+				urbansim.connected.addEdge(this, a, new Double(0));
+			}
+		}
+		// This is a hack cast, but should be OK
+		return (List<Device>) (List<?>) inRange;
+	}
 
+	public void sleep() throws SuspendExecution {
+		Coroutine.yield();
+	}
+
+	public void sleep(int seconds) throws SuspendExecution {
+		sleepTime = seconds;
+		Coroutine.yield();
+	}
+
+	@Override
+	public void coExecute() throws SuspendExecution {
+		userAgent.main();
 	}
 
 }

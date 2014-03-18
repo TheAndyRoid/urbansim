@@ -4,6 +4,9 @@ import sim.engine.*;
 import sim.display.*;
 import sim.portrayal.continuous.ContinuousPortrayal2D;
 import sim.portrayal.grid.*;
+import sim.portrayal.network.NetworkPortrayal2D;
+import sim.portrayal.network.SimpleEdgePortrayal2D;
+import sim.portrayal.network.SpatialNetwork2D;
 import sim.portrayal.simple.*;
 
 import java.awt.*;
@@ -18,6 +21,8 @@ public class UrbanSimWithUI extends GUIState {
 	public Display2D display;
 	public JFrame displayFrame;
 	ContinuousPortrayal2D agentPortrayal = new ContinuousPortrayal2D();
+	NetworkPortrayal2D networkPortrayal = new NetworkPortrayal2D();
+
 
 	public static void main(String[] args) {
 
@@ -55,6 +60,11 @@ public class UrbanSimWithUI extends GUIState {
 		// Setup what and how to portray agents
 		agentPortrayal.setField(urbanSim.agentPos);
 		agentPortrayal.setPortrayalForAll(new OvalPortrayal2D(8));
+		
+		
+		networkPortrayal.setField( new SpatialNetwork2D( urbanSim.agentPos, urbanSim.connected ) );
+		networkPortrayal.setPortrayalForAll(new SimpleEdgePortrayal2D());
+
 
 		// reschedule the displayer
 		display.reset();
@@ -74,6 +84,7 @@ public class UrbanSimWithUI extends GUIState {
 										// list
 		displayFrame.setVisible(true);
 		display.attach(agentPortrayal, "Map");
+		display.attach( networkPortrayal, "Connected" );
 	}
 
 	public void quit() {

@@ -1,41 +1,75 @@
 package urbansim;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import de.matthiasmann.continuations.Coroutine;
 import de.matthiasmann.continuations.CoroutineProto;
 import de.matthiasmann.continuations.SuspendExecution;
 
-public class MyAgent implements DeviceAgent, CoroutineProto{
+public class MyAgent implements DeviceAgent {
+
 	private Device device;
-	public Coroutine co;
-	
-	// This is where we should execute main
-	public final void coExecute() throws SuspendExecution {
-		main();
-	}
+	private int floodTTL = 9;
 
 	public MyAgent(Device device) {
 		this.device = device;
-		co = new Coroutine(this);
 	}
 
-	// This method must be friendly. It must yeild.
+	// This method must be processor friendly. It must call sleep when it has
+	// finished processing
 	public void main() throws SuspendExecution {
 		do {
-			System.out.println("running");
+
+			// Scan for devices
 			List<Device> inRange = device.scan();
-			// System.out.println("Main");
-			for (Device d : inRange) {
-				Message msg = new Message(device, this, d, 0);
-				System.out.println("Sent message");
-				device.sendTo(device, msg);
+
+			// send message if we are the source.
+			if (device.getName().equals("static@1")) {
+				// System.out.println("Source");
+				Flood flood = new Flood(floodTTL, "static@20");
+				// send to everyone we can.
+				for (Device d : inRange) {
+					Message msg = new Message(device, flood, d, 0);
+					device.sendTo(d, msg);
+					//System.out.println("Send Message");
+				}
+			} else {
+				// System.out.println("Not Source");
+				Message rcv = device.recv();
+				if(rcv != null) {
+
+					if (((Flood) rcv.obj).target.equals(device.getName())) {
+						// hack exit
+						System.out.println("Message Recived");
+						//System.exit(0);
+					} else {
+												
+						Flood recvd = (Flood) rcv.obj;
+						//System.out.println(recvd.ttl);
+						if (recvd.ttl <= 0) {
+							System.out.println("Dropped");
+							// don't forward the message
+						} else {
+							//System.out.println(recvd.ttl);
+							// decrease ttl;
+							Flood tmp = new Flood(recvd.ttl--, recvd.target);
+							for (Device d : inRange) {
+								if (d != rcv.src) {
+									//System.out.println("Forwarded");
+									Message msg = new Message(device, tmp, d, 0);
+									device.sendTo(d, msg);
+									device.sleep();
+								}
+							}
+						}
+						
+
+					}
+				}
 			}
-			while (device.recv() != null) {
-				System.out.println("Got Message");
-			}
-			System.out.println("yeild");
-			Coroutine.yield();
+			// sleep when done
+			device.sleep();
 		} while (true);
 	}
 

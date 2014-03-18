@@ -4,7 +4,9 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -36,6 +38,8 @@ public class Observer implements Steppable {
 	private String caseDir;
 	private int deltasPerFile = 1;
 	private String saveDir;
+	
+	private List<Message> sentMessages = new ArrayList<Message>();
 
 	public Observer(int deltasPerFile, String caseDir, SimState state) {
 		this.caseDir = caseDir;
@@ -61,7 +65,7 @@ public class Observer implements Steppable {
 
 		if ((state.schedule.getTime() % deltasPerFile) == 0) {
 
-			if (state.schedule.getTime() != 0) {// Write the file out
+			if (state.schedule.getTime() != 0) {// Write the old file out
 				try {
 
 					// Performs the actual writing
@@ -73,7 +77,7 @@ public class Observer implements Steppable {
 					tfe.printStackTrace();
 				}
 			}
-
+			//Create a new file to use
 			createNewFile(saveDir + "/"
 					+ String.valueOf(state.schedule.getTime()) + ".xml");
 		}
@@ -90,6 +94,12 @@ public class Observer implements Steppable {
 			Agent.writeAgent(a, stepElement, doc);
 		}
 
+		for(Message msg:sentMessages){
+			msg.toXML(msg, stepElement, doc);
+		}
+		//Clear the messages
+		sentMessages.clear();
+		
 		if ((state.schedule.getTime() % (deltasPerFile + 1)) == 0) {
 
 		}
@@ -123,7 +133,14 @@ public class Observer implements Steppable {
 		}
 
 	}
-
 	
+	
+	public void logMessage(Message msg){
+		synchronized(sentMessages){
+			sentMessages.add(msg);			
+		}		
+	}
+
+		
 
 }

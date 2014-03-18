@@ -25,6 +25,7 @@ import sim.util.*;
 import sim.field.continuous.*;
 import sim.field.grid.DoubleGrid2D;
 import sim.field.grid.SparseGrid2D;
+import sim.field.network.Network;
 
 public class UrbanSim extends SimState implements VehicleLifecycleObserver,
 		Steppable {
@@ -32,12 +33,14 @@ public class UrbanSim extends SimState implements VehicleLifecycleObserver,
 	private void getBounds() {
 
 	}
-
 	// Width and height are ignored
 	private int GRID_WIDTH = 100, GRID_HEIGHT = 100;
 
 	// data
 	public Continuous2D agentPos = new Continuous2D(1.0, 500, 500);
+	//for displaying connection between devices
+	public Network connected = new Network(false);
+
 	public int numAgents = 5;
 	public ParallelSequence SAgents;
 	public TraCI traci;
@@ -55,14 +58,7 @@ public class UrbanSim extends SimState implements VehicleLifecycleObserver,
 	private int simulationDurationSeconds;
 	private int stepDelta;
 	private int deltasPerFile;
-	private long nextAgentID = 0;
-	
-	
-	
-	
-	
-	
-	
+	private long nextAgentID = 0;	
 	
 
 	// Map SUMO strings to agents
@@ -169,6 +165,8 @@ public class UrbanSim extends SimState implements VehicleLifecycleObserver,
 
 		// Remove from graphic
 		agentPos.remove(tmp);
+		connected.removeNode(tmp);
+		
 
 	}
 
@@ -292,12 +290,12 @@ public class UrbanSim extends SimState implements VehicleLifecycleObserver,
 
 	}
 	//Calculate agents in range
-	public List<Device> inRange(Agent agent){
-		List<Device> agentsInRange = new ArrayList<Device>();
+	public List<Agent> inRange(Agent agent){
+		List<Agent> agentsInRange = new ArrayList<Agent>();
 		Double2D aPos = agent.currentPosition();
 		double dist = 50;
 		for(Agent a:allAgents){
-			if(aPos.distance(a.currentPosition())<=dist){
+			if(aPos.distance(a.currentPosition())<=dist && a != agent){
 				agentsInRange.add(a);
 			}
 		}
