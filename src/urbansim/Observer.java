@@ -35,14 +35,15 @@ public class Observer implements Steppable {
 	private DOMSource source;
 	private StreamResult result;
 
-	private String caseDir;
-	private int deltasPerFile = 1;
 	private String saveDir;
+
+	private int deltasPerFile = 1;
+
 	
 	private List<Message> sentMessages = new ArrayList<Message>();
 
-	public Observer(int deltasPerFile, String caseDir, SimState state) {
-		this.caseDir = caseDir;
+	public Observer(int deltasPerFile, String saveDir, SimState state) {
+		this.saveDir = saveDir;
 		this.deltasPerFile = deltasPerFile;
 		createDataFolder();
 	}
@@ -50,12 +51,12 @@ public class Observer implements Steppable {
 	private void createDataFolder() {
 		Date date = new Date();
 		SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMddHHmmss");
-		boolean success = (new File(caseDir + "/" + dateFormat.format(date)))
+		boolean success = (new File(saveDir + "/" + dateFormat.format(date)))
 				.mkdirs();
 		if (!success) {
 			System.out.println("Could not create save directory");
 		} else {
-			saveDir = new String(caseDir + "/" + dateFormat.format(date));
+			saveDir = new String(saveDir + "/" + dateFormat.format(date));
 		}
 	}
 

@@ -5,8 +5,8 @@
   <sumoServer>127.0.0.1</sumoServer>
   <staticAgentFile>staticAgents.xml</staticAgentFile>
   <agentConfigFile>Agent.xml</agentConfigFile>
-  <saveDirectory>/</saveDirectory>
+  <saveDirectory>data</saveDirectory>
   <simulationDurationSeconds>50000</simulationDurationSeconds>
   <stepDelta>1000</stepDelta>
-  <deltasPerFile>60</deltasPerFile>
+  <deltasPerFile>240</deltasPerFile>
 </simulation>

@@ -97,7 +97,7 @@ public class UrbanSim extends SimState implements VehicleLifecycleObserver,
 		traci.addVehicleLifecycleObserver(this);
 
 		// Create observer
-		observer = new Observer(deltasPerFile,caseDir,this);
+		observer = new Observer(deltasPerFile,saveDirectory,this);
 
 		step(this);
 
@@ -270,6 +270,7 @@ public class UrbanSim extends SimState implements VehicleLifecycleObserver,
 
 			//read in the elements
 			caseDir  = readElementString("caseDir",root);
+			saveDirectory = caseDir +"/" +readElementString("saveDirectory",root);
 			sumoFile  = readElementString("sumoFile",root);
 			sumoServer  = readElementString("sumoServer",root);
 			deltasPerFile  = readElementInt("deltasPerFile",root);

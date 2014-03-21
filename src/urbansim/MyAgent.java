@@ -25,7 +25,7 @@ public class MyAgent implements DeviceAgent {
 			List<Device> inRange = device.scan();
 
 			// send message if we are the source.
-			if (device.getName().equals("static@1")) {
+			if (device.getName().equals("static@34")) {
 				// System.out.println("Source");
 				Flood flood = new Flood(floodTTL, "static@20");
 				// send to everyone we can.
@@ -37,11 +37,13 @@ public class MyAgent implements DeviceAgent {
 			} else {
 				// System.out.println("Not Source");
 				Message rcv = device.recv();
-				if(rcv != null) {
+				while(rcv != null) {
 
 					if (((Flood) rcv.obj).target.equals(device.getName())) {
 						// hack exit
-						System.out.println("Message Recived");
+						System.out.println("Message            Recived");
+						System.out.println("Message            Recived");
+						System.out.println("Message            Recived");
 						//System.exit(0);
 					} else {
 												
@@ -66,6 +68,7 @@ public class MyAgent implements DeviceAgent {
 						
 
 					}
+					rcv = device.recv();	
 				}
 			}
 			// sleep when done

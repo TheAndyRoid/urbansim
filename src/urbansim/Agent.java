@@ -17,6 +17,7 @@ import it.polito.appeal.traci.Vehicle;
 import sim.engine.*;
 import sim.util.*;
 import sim.field.continuous.*;
+import sim.field.network.Edge;
 import urbansim.p2p.PeerComponent;
 import urbansim.physical.PhysicalComponent;
 
@@ -32,6 +33,10 @@ public class Agent implements Steppable, PhysicalComponent, Device,
 	private SimState simState;
 	private DeviceAgent userAgent;
 
+	private int range = 50;
+
+	private long time = 0;
+
 	private int sleepTime = 0;
 
 	// java-continuation
@@ -39,7 +44,13 @@ public class Agent implements Steppable, PhysicalComponent, Device,
 
 	private Queue<Message> sendBuffer = new LinkedList<Message>();
 	private Queue<Message> recvBuffer = new LinkedList<Message>();
-	
+	private List<Edge> activeConnections = new ArrayList<Edge>();
+
+	private void checkGotTime() throws SuspendExecution {
+		if (time >= 1000) {
+			Coroutine.yield();
+		}
+	}
 
 	public Agent(String type, long id, SimState state) {
 
@@ -92,12 +103,23 @@ public class Agent implements Steppable, PhysicalComponent, Device,
 
 	}
 
+	private void resetTime() {
+		if (time <= 1000) {
+			time = 0;
+		} else {
+			time -= 1000;
+		}
+	}
+
 	// Called by MASON
 	public void step(SimState state) {
 		if (sleepTime == 0) {
+			resetTime();
 			co.run();
 		} else {
+			resetTime();
 			sleepTime--;
+
 		}
 	}
 
@@ -137,53 +159,132 @@ public class Agent implements Steppable, PhysicalComponent, Device,
 		UrbanSim urbansim = (UrbanSim) simState;
 		urbansim.observer.logMessage(msg);
 		synchronized (recvBuffer) {
-			//System.out.println("Device Got Message!");
+			// System.out.println("Device Got Message!");
 			recvBuffer.add(msg);
 		}
 
 	}
 
-	// Add message to send buffer
-	public void sendTo(Device a, Message msg) {
-		// System.out.println("Send To!");
-		if (msg != null) {
-			Agent dst = (Agent) a;
-			dst.receive(msg);
+	
+	private void addConnection(Agent b) {
+		UrbanSim urbansim = (UrbanSim) simState;
+		Edge e = new Edge(this, b, new Double(0));
+		synchronized (activeConnections) {
+			activeConnections.add(e);
+		}
+		synchronized (urbansim.connected) {
+			urbansim.connected.addEdge(e);
+		}
+
+	}
+
+	private void removeConnection(Agent b) {
+		UrbanSim urbansim = (UrbanSim) simState;
+		Edge toRemove = findEdge(b);
+		
+		if (toRemove != null) {
+			synchronized(activeConnections){
+				activeConnections.remove(toRemove);
+			}			
+			synchronized (urbansim.connected) {
+				urbansim.connected.removeEdge(toRemove);
+			}
+		}
+	}
+	
+	private void resetConnections(){
+		UrbanSim urbansim = (UrbanSim) simState;
+		synchronized (activeConnections){
+			activeConnections.clear();
+		}
+		synchronized (urbansim.connected) {
+			urbansim.connected.removeNode(this);
+		}
+		
+	}
+
+	private Edge findEdge(Agent b) {
+		Edge found = null;
+		UrbanSim urbansim = (UrbanSim) simState;
+		synchronized (activeConnections) {
+			for (Edge e : activeConnections) {
+				if (e.getOtherNode(this) == b) {
+					found = e;					
+					break;
+				}
+			}
+		}
+		return found;
+	}
+
+	private boolean inRange(Agent b) {
+		UrbanSim urbansim = (UrbanSim) simState;
+		Double2D aPos = this.currentPosition();
+
+		if (aPos.distance(b.currentPosition()) <= range) {
+			return true;
+		} else {
+			//That agent is out of range.
+			removeConnection(b);
+			return false;
 		}
 	}
 
-	// Get message from receive buffer or return null
-	public Message recv() {
+	// Add message to send buffer
+	public void sendTo(Device a, Message msg) throws SuspendExecution {
+		
+		Agent dst = (Agent) a;
+		// System.out.println("Send To!");
+		if (msg != null && inRange(dst)) {			
+			dst.receive(msg);
+			// Time to send a message
+			time += 10;
+		}else{
+			//Error sending message
+			time += 20;
+		}
+		checkGotTime();
+	}
+
+	public Message getMessage(Queue<Message> buffer) {
 		Message msg;
-		synchronized (recvBuffer) {
+		synchronized (buffer) {
 			if (recvBuffer.isEmpty()) {
-				//System.out.println("Empty Buffer");
+				// System.out.println("Empty Buffer");
 				msg = null;
 			} else {
-				//System.out.println("Got a message");
+				// System.out.println("Got a message");
 				msg = recvBuffer.remove();
-				
+
 			}
 		}
 		return msg;
 	}
 
+	// Get message from receive buffer or return null
+	public Message recv() throws SuspendExecution {
+		// time to receive a message
+		time += 15;
+		checkGotTime();
+		return getMessage(recvBuffer);
+	}
+
 	// This is for the hack cast I'm aware, its bad but needed
 	@SuppressWarnings("unchecked")
-	public List<Device> scan() {
+	public List<Device> scan() throws SuspendExecution {
+		// Time to perform a scan
+		time += 250;
+
 		UrbanSim urbansim = (UrbanSim) simState;
 		List<Agent> inRange = urbansim.inRange(this);
-		// Have to sync on network or bad things happen
-		synchronized (urbansim.connected) {
-			// clear the old connections
-			urbansim.connected.removeNode(this);
-			// add ourself back to the network
-			urbansim.connected.addNode(this);
-			// recreate edges
-			for (Agent a : inRange) {
-				urbansim.connected.addEdge(this, a, new Double(0));
-			}
+		
+		resetConnections();		
+		for(Agent a:inRange){
+			addConnection(a);
 		}
+		
+
+		checkGotTime();
 		// This is a hack cast, but should be OK
 		return (List<Device>) (List<?>) inRange;
 	}

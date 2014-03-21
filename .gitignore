@@ -3,6 +3,7 @@
 ######
 /jar
 /doc
+test/caseFile/data
 
 #Temp Files#
 ############

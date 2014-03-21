@@ -1,108 +1,108 @@
 <?xml version="1.0"?>
 <Simulation>
     <agent id="0" type="static">
-      <position x="130.67967374367282" y="498.35"/>
+      <position x="130.67967374367282" y="490"/>
     </agent>
     <agent id="1" type="static">
-      <position x="498.35" y="373.89923748732144"/>
+      <position x="490" y="373.89923748732144"/>
     </agent>
     <agent id="2" type="static">
-      <position x="323.5803822489793" y="1.6500000000000001"/>
+      <position x="323.5803822489793" y="10"/>
     </agent>
     <agent id="3" type="static">
-      <position x="1.6500000000000001" y="154.4294308482593"/>
+      <position x="10" y="154.4294308482593"/>
     </agent>
     <agent id="4" type="static">
-      <position x="109.39611884015748" y="498.35"/>
+      <position x="109.39611884015748" y="490"/>
     </agent>
     <agent id="5" type="static">
-      <position x="498.35" y="394.67536409342966"/>
+      <position x="490" y="394.67536409342966"/>
     </agent>
     <agent id="6" type="static">
-      <position x="432.37734251568867" y="1.6500000000000001"/>
+      <position x="432.37734251568867" y="10"/>
     </agent>
     <agent id="7" type="static">
-      <position x="1.6500000000000001" y="132.6723578580949"/>
+      <position x="10" y="132.6723578580949"/>
     </agent>
     <agent id="8" type="static">
-      <position x="88.69949228119586" y="498.35"/>
+      <position x="88.69949228119586" y="490"/>
     </agent>
     <agent id="9" type="static">
-      <position x="498.35" y="415.6668323139144"/>
+      <position x="490" y="415.6668323139144"/>
     </agent>
     <agent id="10" type="static">
-      <position x="450.4914076105877" y="1.6500000000000001"/>
+      <position x="450.4914076105877" y="10"/>
     </agent>
     <agent id="11" type="static">
-      <position x="1.6500000000000001" y="25.58549192717214"/>
+      <position x="10" y="25.58549192717214"/>
     </agent>
     <agent id="12" type="static">
-      <position x="65.42737171010197" y="498.35"/>
+      <position x="65.42737171010197" y="490"/>
     </agent>
     <agent id="13" type="static">
-      <position x="498.35" y="449.40983825977753"/>
+      <position x="490" y="449.40983825977753"/>
     </agent>
     <agent id="14" type="static">
-      <position x="489.21992799005847" y="1.6500000000000001"/>
+      <position x="489.21992799005847" y="10"/>
     </agent>
     <agent id="15" type="static">
-      <position x="13.391012288695379" y="1.6500000000000001"/>
+      <position x="13.391012288695379" y="10"/>
     </agent>
     <agent id="16" type="static">
-      <position x="1.6500000000000001" y="474.1832001425424"/>
+      <position x="10" y="474.1832001425424"/>
     </agent>
     <agent id="17" type="static">
-      <position x="393.1645302002095" y="498.35"/>
+      <position x="393.1645302002095" y="490"/>
     </agent>
     <agent id="18" type="static">
-      <position x="498.35" y="111.95315332012245"/>
+      <position x="490" y="111.95315332012245"/>
     </agent>
     <agent id="19" type="static">
-      <position x="108.6274966682306" y="1.6500000000000001"/>
+      <position x="108.6274966682306" y="10"/>
     </agent>
     <agent id="20" type="static">
-      <position x="1.6500000000000001" y="360.5731944681146"/>
+      <position x="10" y="360.5731944681146"/>
     </agent>
     <agent id="21" type="static">
-      <position x="298.1746018582024" y="498.35"/>
+      <position x="298.1746018582024" y="490"/>
     </agent>
     <agent id="22" type="static">
-      <position x="498.35" y="196.81130218002943"/>
+      <position x="490" y="196.81130218002943"/>
     </agent>
     <agent id="23" type="static">
-      <position x="201.37572099510572" y="1.6500000000000001"/>
+      <position x="201.37572099510572" y="10"/>
     </agent>
     <agent id="24" type="static">
-      <position x="1.6500000000000001" y="265.43724421616656"/>
+      <position x="10" y="265.43724421616656"/>
     </agent>
     <agent id="25" type="static">
-      <position x="498.35" y="292.06243925262237"/>
+      <position x="490" y="292.06243925262237"/>
     </agent>
     <agent id="26" type="static">
-      <position x="219.78193418548048" y="498.35"/>
+      <position x="219.78193418548048" y="490"/>
     </agent>
     <agent id="27" type="static">
-      <position x="299.0777982870116" y="1.6500000000000001"/>
+      <position x="299.0777982870116" y="10"/>
     </agent>
     <agent id="28" type="static">
-      <position x="1.6500000000000001" y="178.19827870288867"/>
+      <position x="10" y="178.19827870288867"/>
     </agent>
     <agent id="29" type="static">
-      <position x="498.35" y="349.09426263859496"/>
+      <position x="490" y="349.09426263859496"/>
     </agent>
     <agent id="30" type="static">
-      <position x="153.44114912903714" y="498.35"/>
+      <position x="153.44114912903714" y="490"/>
     </agent>
     <agent id="31" type="static">
-      <position x="414.3630528533831" y="1.6500000000000001"/>
+      <position x="414.3630528533831" y="10"/>
     </agent>
     <agent id="32" type="static">
-      <position x="1.6500000000000001" y="41.40846266942099"/>
+      <position x="10" y="41.40846266942099"/>
     </agent>
     <agent id="33" type="static">
-      <position x="11.496544463187456" y="498.35"/>
+      <position x="11.496544463187456" y="490"/>
     </agent>
     <agent id="34" type="static">
-      <position x="498.35" y="490.02844701791184"/>
+      <position x="490" y="490"/>
     </agent>
 </Simulation>
