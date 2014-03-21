@@ -21,15 +21,25 @@ public class MyAgent implements DeviceAgent {
 	public void main() throws SuspendExecution {
 		do {
 
+			//Remove all old connections
+			for(Device d:device.activeConnections()){
+				device.disconnect(d);
+			}
 			// Scan for devices
 			List<Device> inRange = device.scan();
+			
+			//connect to them all
+			for (Device d : inRange) {
+				device.connect(d);
+			}
+		
 
 			// send message if we are the source.
 			if (device.getName().equals("static@34")) {
 				// System.out.println("Source");
 				Flood flood = new Flood(floodTTL, "static@20");
 				// send to everyone we can.
-				for (Device d : inRange) {
+				for(Device d:device.activeConnections()){
 					Message msg = new Message(device, flood, d, 0);
 					device.sendTo(d, msg);
 					//System.out.println("Send Message");

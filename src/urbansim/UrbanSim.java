@@ -291,12 +291,11 @@ public class UrbanSim extends SimState implements VehicleLifecycleObserver,
 
 	}
 	//Calculate agents in range
-	public List<Agent> inRange(Agent agent){
+	public List<Agent> inRange(Agent agent, int range){
 		List<Agent> agentsInRange = new ArrayList<Agent>();
 		Double2D aPos = agent.currentPosition();
-		double dist = 50;
 		for(Agent a:allAgents){
-			if(aPos.distance(a.currentPosition())<=dist && a != agent){
+			if(aPos.distance(a.currentPosition())<=range && a != agent){
 				agentsInRange.add(a);
 			}
 		}

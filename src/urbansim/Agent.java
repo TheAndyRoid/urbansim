@@ -116,6 +116,8 @@ public class Agent implements Steppable, PhysicalComponent, Device,
 		if (sleepTime == 0) {
 			resetTime();
 			co.run();
+			// update connections ui
+			updateUI();
 		} else {
 			resetTime();
 			sleepTime--;
@@ -165,42 +167,34 @@ public class Agent implements Steppable, PhysicalComponent, Device,
 
 	}
 
-	
-	private void addConnection(Agent b) {
-		UrbanSim urbansim = (UrbanSim) simState;
+	private boolean addConnection(Agent b) {
+
 		Edge e = new Edge(this, b, new Double(0));
 		synchronized (activeConnections) {
 			activeConnections.add(e);
 		}
-		synchronized (urbansim.connected) {
-			urbansim.connected.addEdge(e);
-		}
-
+		return true;
 	}
 
-	private void removeConnection(Agent b) {
-		UrbanSim urbansim = (UrbanSim) simState;
+	public void removeConnection(Agent b) {
 		Edge toRemove = findEdge(b);
-		
+
 		if (toRemove != null) {
-			synchronized(activeConnections){
+			synchronized (activeConnections) {
 				activeConnections.remove(toRemove);
-			}			
-			synchronized (urbansim.connected) {
-				urbansim.connected.removeEdge(toRemove);
 			}
 		}
 	}
-	
-	private void resetConnections(){
+
+	private void resetConnections() {
 		UrbanSim urbansim = (UrbanSim) simState;
-		synchronized (activeConnections){
+		synchronized (activeConnections) {
 			activeConnections.clear();
 		}
 		synchronized (urbansim.connected) {
 			urbansim.connected.removeNode(this);
 		}
-		
+
 	}
 
 	private Edge findEdge(Agent b) {
@@ -209,12 +203,25 @@ public class Agent implements Steppable, PhysicalComponent, Device,
 		synchronized (activeConnections) {
 			for (Edge e : activeConnections) {
 				if (e.getOtherNode(this) == b) {
-					found = e;					
+					//System.out.println("Found edge");
+					found = e;
 					break;
 				}
 			}
 		}
 		return found;
+	}
+
+	private void updateUI() {
+		UrbanSim urbansim = (UrbanSim) simState;
+		synchronized (urbansim.connected) {
+			urbansim.connected.removeNode(this);
+			synchronized (activeConnections) {
+			for (Edge e : activeConnections) {
+				urbansim.connected.addEdge(e);
+			}
+			}
+		}
 	}
 
 	private boolean inRange(Agent b) {
@@ -224,7 +231,7 @@ public class Agent implements Steppable, PhysicalComponent, Device,
 		if (aPos.distance(b.currentPosition()) <= range) {
 			return true;
 		} else {
-			//That agent is out of range.
+			// That agent is out of range.
 			removeConnection(b);
 			return false;
 		}
@@ -232,15 +239,15 @@ public class Agent implements Steppable, PhysicalComponent, Device,
 
 	// Add message to send buffer
 	public void sendTo(Device a, Message msg) throws SuspendExecution {
-		
+
 		Agent dst = (Agent) a;
 		// System.out.println("Send To!");
-		if (msg != null && inRange(dst)) {			
+		if (msg != null && inRange(dst)) {
 			dst.receive(msg);
 			// Time to send a message
 			time += 10;
-		}else{
-			//Error sending message
+		} else {
+			// Error sending message
 			time += 20;
 		}
 		checkGotTime();
@@ -248,7 +255,7 @@ public class Agent implements Steppable, PhysicalComponent, Device,
 
 	public Message getMessage(Queue<Message> buffer) {
 		Message msg;
-		synchronized (buffer) {
+		synchronized (recvBuffer) {
 			if (recvBuffer.isEmpty()) {
 				// System.out.println("Empty Buffer");
 				msg = null;
@@ -264,7 +271,7 @@ public class Agent implements Steppable, PhysicalComponent, Device,
 	// Get message from receive buffer or return null
 	public Message recv() throws SuspendExecution {
 		// time to receive a message
-		time += 15;
+		time += 10;
 		checkGotTime();
 		return getMessage(recvBuffer);
 	}
@@ -273,16 +280,10 @@ public class Agent implements Steppable, PhysicalComponent, Device,
 	@SuppressWarnings("unchecked")
 	public List<Device> scan() throws SuspendExecution {
 		// Time to perform a scan
-		time += 250;
+		time += 50;
 
 		UrbanSim urbansim = (UrbanSim) simState;
-		List<Agent> inRange = urbansim.inRange(this);
-		
-		resetConnections();		
-		for(Agent a:inRange){
-			addConnection(a);
-		}
-		
+		List<Agent> inRange = urbansim.inRange(this, range);
 
 		checkGotTime();
 		// This is a hack cast, but should be OK
@@ -301,6 +302,35 @@ public class Agent implements Steppable, PhysicalComponent, Device,
 	@Override
 	public void coExecute() throws SuspendExecution {
 		userAgent.main();
+	}
+
+	public boolean connect(Device d) throws SuspendExecution {
+		return addConnection((Agent) d);
+	}
+
+	
+	
+	@Override
+	public void disconnect(Device d) {
+		removeConnection((Agent) d);
+		//This is a kind disconnect
+		((Agent)d).removeConnection(this);
+	}
+
+	private List<Device> activeCon() {
+		List<Device> connectedTo = new ArrayList<Device>();
+		synchronized (activeConnections) {
+			for (Edge e : activeConnections) {
+				connectedTo.add((Device) e.getOtherNode(this));
+			}
+		}
+		return connectedTo;
+	}
+
+	@Override
+	public List<Device> activeConnections() throws SuspendExecution {
+
+		return activeCon();
 	}
 
 }
