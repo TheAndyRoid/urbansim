@@ -8,5 +8,5 @@
   <saveDirectory>data</saveDirectory>
   <simulationDurationSeconds>50000</simulationDurationSeconds>
   <stepDelta>1000</stepDelta>
-  <deltasPerFile>240</deltasPerFile>
+  <deltasPerFile>60</deltasPerFile>
 </simulation>

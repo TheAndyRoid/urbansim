@@ -40,7 +40,6 @@ public class Observer implements Steppable {
 	private int deltasPerFile = 1;
 
 	
-	private List<Message> sentMessages = new ArrayList<Message>();
 
 	public Observer(int deltasPerFile, String saveDir, SimState state) {
 		this.saveDir = saveDir;
@@ -92,14 +91,11 @@ public class Observer implements Steppable {
 		stepElement.setAttributeNode(attr);
 
 		for (Agent a : urbansim.allAgents) {
-			Agent.writeAgent(a, stepElement, doc);
+			a.toXML(stepElement, doc);
 		}
 
-		for(Message msg:sentMessages){
-			msg.toXML(msg, stepElement, doc);
-		}
-		//Clear the messages
-		sentMessages.clear();
+		
+		
 		
 		if ((state.schedule.getTime() % (deltasPerFile + 1)) == 0) {
 
@@ -136,11 +132,7 @@ public class Observer implements Steppable {
 	}
 	
 	
-	public void logMessage(Message msg){
-		synchronized(sentMessages){
-			sentMessages.add(msg);			
-		}		
-	}
+	
 
 		
 

@@ -8,6 +8,12 @@ import java.util.List;
 import java.util.PriorityQueue;
 import java.util.Queue;
 
+
+
+
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
+
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
@@ -21,7 +27,7 @@ import sim.field.network.Edge;
 import urbansim.p2p.PeerComponent;
 import urbansim.physical.PhysicalComponent;
 
-public class Agent implements Steppable, PhysicalComponent, Device,
+public class Agent extends ToXML implements Steppable, PhysicalComponent, Device,
 		CoroutineProto {
 
 	public PhysicalComponent phy;
@@ -35,19 +41,28 @@ public class Agent implements Steppable, PhysicalComponent, Device,
 
 	private int range = 50;
 
-	private long time = 0;
+	private Lock running = new ReentrantLock();
+	
+	private double startTime;
+	private double agentTime = 0;
 
 	private int sleepTime = 0;
 
+	
 	// java-continuation
 	private Coroutine co;
 
 	private Queue<Message> sendBuffer = new LinkedList<Message>();
 	private Queue<Message> recvBuffer = new LinkedList<Message>();
+	
+	private List<Message> logSent = new ArrayList<Message>();
+	private List<Message> logReceived = new ArrayList<Message>();
+	
+	
 	private List<Edge> activeConnections = new ArrayList<Edge>();
 
 	private void checkGotTime() throws SuspendExecution {
-		if (time >= 1000) {
+		if (agentTime >= startTime + 1000) {
 			Coroutine.yield();
 		}
 	}
@@ -103,48 +118,39 @@ public class Agent implements Steppable, PhysicalComponent, Device,
 
 	}
 
-	private void resetTime() {
-		if (time <= 1000) {
-			time = 0;
-		} else {
-			time -= 1000;
-		}
-	}
 
+	private void time(){
+		// get time
+				startTime = simState.schedule.getTime() * 1000;
+				if (agentTime < startTime) {
+					agentTime = startTime;
+				}
+	}
+	
 	// Called by MASON
 	public void step(SimState state) {
-		if (sleepTime == 0) {
-			resetTime();
-			co.run();
-			// update connections ui
-			updateUI();
-		} else {
-			resetTime();
-			sleepTime--;
+		time();
+		if (agentTime < startTime + 1000) {
+			running.lock();
+			try {
+				if (co.getState() != Coroutine.State.RUNNING
+						&& co.getState() != Coroutine.State.FINISHED) {
+					do {
+						co.run();
+					} while ((agentTime < startTime + 1000)
+							&& !recvBuffer.isEmpty());
+					// update connections ui
+					updateUI();
+				}
 
+			} finally {
+				running.unlock();
+			}
 		}
-	}
-
-	// Write to file
-	static public void writeAgent(Agent agent, Element agentRoot, Document doc) {
-		// create agent element
-		Element agentElement = doc.createElement("agent");
-		agentRoot.appendChild(agentElement);
-
-		// set attributes
-		agentElement.setAttribute("type", agent.getType());
-		agentElement.setAttribute("id", Long.toString(agent.getID()));
-
-		Element position = doc.createElement("position");
-
-		position.setAttribute("x",
-				Double.toString(agent.currentPosition().getX()));
-		position.setAttribute("y",
-				Double.toString(agent.currentPosition().getY()));
-
-		agentElement.appendChild(position);
 
 	}
+	
+	
 
 	// read from file
 	public void readAgent(Element eAgent, SimState state) {
@@ -156,16 +162,7 @@ public class Agent implements Steppable, PhysicalComponent, Device,
 
 	}
 
-	// Add message to send buffer
-	private void receive(Message msg) {
-		UrbanSim urbansim = (UrbanSim) simState;
-		urbansim.observer.logMessage(msg);
-		synchronized (recvBuffer) {
-			// System.out.println("Device Got Message!");
-			recvBuffer.add(msg);
-		}
-
-	}
+	
 
 	private boolean addConnection(Agent b) {
 
@@ -237,19 +234,69 @@ public class Agent implements Steppable, PhysicalComponent, Device,
 		}
 	}
 
-	// Add message to send buffer
-	public void sendTo(Device a, Message msg) throws SuspendExecution {
+	// 
+	private void receive(Message msg) {
+		UrbanSim urbansim = (UrbanSim) simState;
+		synchronized (recvBuffer) {
+			// System.out.println("Device Got Message!");
+			recvBuffer.add(msg);
+		}
 
+		synchronized (logReceived) {
+			logReceived.add(msg);
+		}
+
+		// Check if this device can be started if not already running.
+		if (running.tryLock()) {
+			try {
+				time();
+				if (agentTime < startTime + 1000) {
+					if (co.getState() != Coroutine.State.RUNNING
+							&& co.getState() != Coroutine.State.FINISHED) {
+
+						co.run();
+					}
+				}
+			} finally {
+				running.unlock();
+			}
+		}
+
+	}
+	
+	private void sendMessage(Device a, Message msg) {
 		Agent dst = (Agent) a;
 		// System.out.println("Send To!");
 		if (msg != null && inRange(dst)) {
-			dst.receive(msg);
+
+			//Time the message was sent
+			msg.sendtime = agentTime; 
 			// Time to send a message
-			time += 10;
+			agentTime+= 10;		
+			
+			//time the message should be received
+			msg.recvtime = agentTime ;
+			
+			//Log the message as sent.
+			synchronized(logSent){
+				logSent.add(msg);
+			}
+
+			
+			//give the message to the other device
+			dst.receive(msg);
+			
+
 		} else {
 			// Error sending message
-			time += 20;
+			agentTime += 20;
 		}
+	}
+	
+	
+	// Add message to send buffer
+	public void sendTo(Device a, Message msg) throws SuspendExecution {
+		sendMessage(a,msg);
 		checkGotTime();
 	}
 
@@ -271,7 +318,7 @@ public class Agent implements Steppable, PhysicalComponent, Device,
 	// Get message from receive buffer or return null
 	public Message recv() throws SuspendExecution {
 		// time to receive a message
-		time += 10;
+		agentTime += 10;
 		checkGotTime();
 		return getMessage(recvBuffer);
 	}
@@ -280,7 +327,7 @@ public class Agent implements Steppable, PhysicalComponent, Device,
 	@SuppressWarnings("unchecked")
 	public List<Device> scan() throws SuspendExecution {
 		// Time to perform a scan
-		time += 50;
+		agentTime += 200;
 
 		UrbanSim urbansim = (UrbanSim) simState;
 		List<Agent> inRange = urbansim.inRange(this, range);
@@ -295,7 +342,7 @@ public class Agent implements Steppable, PhysicalComponent, Device,
 	}
 
 	public void sleep(int seconds) throws SuspendExecution {
-		sleepTime = seconds;
+		agentTime += seconds *1000;				
 		Coroutine.yield();
 	}
 
@@ -305,6 +352,8 @@ public class Agent implements Steppable, PhysicalComponent, Device,
 	}
 
 	public boolean connect(Device d) throws SuspendExecution {
+		agentTime += 5;
+		checkGotTime();
 		return addConnection((Agent) d);
 	}
 
@@ -332,5 +381,48 @@ public class Agent implements Steppable, PhysicalComponent, Device,
 
 		return activeCon();
 	}
+
+	@Override
+	public Element toXML(Element root, Document doc) {
+		// Write to file
+		
+			// create agent element
+			Element agentElement = doc.createElement("agent");
+			root.appendChild(agentElement);
+
+			// set attributes
+			agentElement.setAttribute("type", getType());
+			agentElement.setAttribute("id", Long.toString(getID()));
+
+			Element position = doc.createElement("position");
+
+			position.setAttribute("x",
+					Double.toString(currentPosition().getX()));
+			position.setAttribute("y",
+					Double.toString(currentPosition().getY()));
+
+			agentElement.appendChild(position);
+			
+			Element elogSent = doc.createElement("Sent");
+			agentElement.appendChild(elogSent);
+			for(Message m:logSent){
+				m.isSender = true;
+				m.toXML(elogSent,doc);				
+			}
+			logSent.clear();
+			
+			
+			Element elogRecv = doc.createElement("Recv");
+			agentElement.appendChild(elogRecv);
+			for(Message m:logReceived){
+				m.isSender=false;
+				m.toXML(elogRecv,doc);
+			}
+			logReceived.clear();
+			return agentElement;
+		
+	}
+
+	
 
 }
