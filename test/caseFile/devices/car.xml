@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+<car>
+  <agent type="flood"/>
+  <interface type='wifi'/>
+  <battery lifeInSeconds='1500'/>
+  <sumoType type="car"/>
+</car>
+

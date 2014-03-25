@@ -90,7 +90,7 @@ public class Observer implements Steppable {
 		attr.setValue(String.valueOf(state.schedule.getTime()));
 		stepElement.setAttributeNode(attr);
 
-		for (Agent a : urbansim.allAgents) {
+		for (Device a : urbansim.allAgents) {
 			a.toXML(stepElement, doc);
 		}
 

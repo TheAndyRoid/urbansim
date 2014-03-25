@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<wifi>
+  <concurentConnections c='6'/>
+  <compatableWith>
+    <wifi/>
+  </compatableWith>
+  <bitrate bps="1000"/>
+  <maxrange m="50"/>
+  <handshake ms="2"/>
+  <bitrateAtDistance>
+    <point  meters='0' bps='1500'/>
+    <point  meters='10' bps='500'/>
+    <point  meters='15' bps='0'/>
+  </bitrateAtDistance>
+  <scanTime ms='200'/>
+</wifi>
+

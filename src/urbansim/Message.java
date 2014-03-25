@@ -5,10 +5,12 @@ import java.lang.reflect.InvocationTargetException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
+import urbansim.physical.DeviceInterface;
+
 public class Message extends ToXML implements Comparable<Message> {
 
 	
-	public Message(Device sender, Object obj, Device destination, int size) {
+	public Message(DeviceInterface sender, Object obj, DeviceInterface destination, int size) {
 		this.src = sender;
 		this.dst = destination;
 		this.obj = obj;
@@ -16,8 +18,8 @@ public class Message extends ToXML implements Comparable<Message> {
 	}
 
 	// Data
-	public Device src;
-	public Device dst;
+	public DeviceInterface src;
+	public DeviceInterface dst;
 	public Object obj;
 	public int size;
 	public double sendtime = 0;
@@ -38,16 +40,16 @@ public class Message extends ToXML implements Comparable<Message> {
 
 		// sender
 		Element sender = doc.createElement("src");
-		sender.setAttribute("type", ((Agent) src).getType());
-		sender.setAttribute("id", Long.toString(((Agent) src).getID()));
+		sender.setAttribute("type", ((Device) src).getType());
+		sender.setAttribute("id", Long.toString(((Device) src).getID()));
 		emsg.appendChild(sender);
 		// Receiver
 		Element receiver = doc.createElement("dst");
-		receiver.setAttribute("type", ((Agent) dst).getType());
-		receiver.setAttribute("id", Long.toString(((Agent) dst).getID()));
+		receiver.setAttribute("type", ((Device) dst).getType());
+		receiver.setAttribute("id", Long.toString(((Device) dst).getID()));
 		emsg.appendChild(receiver);
 		
-		//call objects ToXML function
+		//call objects ToXML function if it exists
 		java.lang.reflect.Method method;
 		try {
 			 method = obj.getClass().getMethod("toXML",Element.class, Document.class);
@@ -55,7 +57,7 @@ public class Message extends ToXML implements Comparable<Message> {
 			} catch (SecurityException e) {
 				e.printStackTrace();
 			} catch (NoSuchMethodException e) {
-				e.printStackTrace();
+				//Object does no implements such a method, no problem continue
 			} catch (IllegalAccessException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();

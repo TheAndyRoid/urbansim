@@ -1,9 +1,11 @@
 package urbansim;
 
+
 import it.polito.appeal.traci.Vehicle;
 import it.polito.appeal.traci.VehicleLifecycleObserver;
 
 import java.awt.geom.Point2D;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -46,25 +48,35 @@ public class UrbanSim extends SimState implements VehicleLifecycleObserver,
 	public TraCI traci;
 	public Observer observer;
 	// Array of all agents
-	Agent[] agents;
+	Device[] agents;
 	
 	//Configuration Options
 	private String caseDir;
 	private String sumoFile;
 	private String sumoServer;
 	private String staticAgentFile;
-	private String agentConfigFile;
+	
+	private String agentTypeDir;
+	private String deviceTypeDir;
+	private String interfaceTypeDir;
+	
+	
+	private Map<String,File> agentTypes = new HashMap<String,File>();
+	private Map<String,File> deviceTypes= new HashMap<String,File>();
+	private Map<String,File> interfaceTypes = new HashMap<String,File>();	
+	
+	private Map<String,Long> id = new HashMap<String,Long>();
+	
 	private String saveDirectory;
 	private int simulationDurationSeconds;
-	private int stepDelta;
 	private int deltasPerFile;
 	private long nextAgentID = 0;	
 	
 
 	// Map SUMO strings to agents
-	public Map<String, Agent> mobileAgents = new HashMap<String, Agent>();
-	public List<Agent> stationaryAgents = new ArrayList<Agent>();
-	public List<Agent> allAgents = new ArrayList<Agent>();
+	public Map<String, Device> mobileAgents = new HashMap<String, Device>();
+	public List<Device> stationaryAgents = new ArrayList<Device>();
+	public List<Device> allAgents = new ArrayList<Device>();
 
 	public UrbanSim(long seed) {
 
@@ -122,11 +134,11 @@ public class UrbanSim extends SimState implements VehicleLifecycleObserver,
 		// Must simulate atleast one Agent
 		if (urbansim.allAgents.size() > 0) {
 			// Create agent array for parallel
-			agents = urbansim.allAgents.toArray(new Agent[urbansim.allAgents
+			agents = urbansim.allAgents.toArray(new Device[urbansim.allAgents
 					.size()]);
 
 			// create parallel for faster processing
-			urbansim.SAgents = new ParallelSequence(agents, 16);
+			urbansim.SAgents = new ParallelSequence(agents, 64);
 
 			// Step Agents
 			urbansim.schedule.scheduleOnce(urbansim.SAgents);
@@ -142,17 +154,36 @@ public class UrbanSim extends SimState implements VehicleLifecycleObserver,
 		System.out.println("new Vehicle:" + vehicle.getID());
 		// Get position
 		Point2D pos = new Point2D.Double();
+		
+		//TODO get vehicle type from sumo.
 
+		String type = new String("car");
+		
+		File dev = deviceTypes.get(type);
+		if(dev != null){
 		// Create new agent
-		Agent tmp = new Agent("mobile",nextAgentID,this);
-		nextAgentID++;
-		tmp.v = vehicle;
+		Device tmp = new Device(nextAgentID,
+								this,
+								dev,
+								agentTypes,
+								interfaceTypes);
+		
+		// Create new agent
+				//Device tmp = new Device("mobile",nextAgentID,this);
+				nextAgentID++;
+				tmp.v = vehicle;
+				
+				// Add agent to mobile agent list
+				mobileAgents.put(vehicle.getID(), tmp);
 
-		// Add agent to mobile agent list
-		mobileAgents.put(vehicle.getID(), tmp);
+				// Add agent to all list
+				allAgents.add(tmp);
+		}
+		
+		
+		
 
-		// Add agent to all list
-		allAgents.add(tmp);
+		
 
 	}
 
@@ -160,7 +191,7 @@ public class UrbanSim extends SimState implements VehicleLifecycleObserver,
 	public void vehicleArrived(Vehicle vehicle) {
 		System.out.println("dead Vehicle");
 		// Remove from arrays
-		Agent tmp = mobileAgents.remove(vehicle.getID());
+		Device tmp = mobileAgents.remove(vehicle.getID());
 		allAgents.remove(tmp);
 
 		// Remove from graphic
@@ -181,36 +212,7 @@ public class UrbanSim extends SimState implements VehicleLifecycleObserver,
 
 	}
 
-	static public int readElementInt(String name,Element root){		
-		return Integer.parseInt(root.getElementsByTagName(name).item(0).getTextContent());		
-	}
-	static public String readElementString(String name,Element root){		
-		return root.getElementsByTagName(name).item(0).getTextContent();		
-	}
-	static public Double readElementDouble(String name,Element root){		
-		return Double.parseDouble(root.getElementsByTagName(name).item(0).getTextContent());		
-	}
-	
-	static public Long readAttributeLong(String name,Element root){		
-		return Long.parseLong(root.getAttribute(name));		
-	}
-	
-	static public String readAttributeString(String name,Element root){		
-		return root.getAttribute(name);		
-	}
-	
-	static public Double readAttributeDouble(String name,Element root){		
-		return Double.parseDouble(root.getAttribute(name));		
-	}
-	static public Double2D readAttributeDouble2D(Element root){
-		return new Double2D(
-				readAttributeDouble("x",root),
-				readAttributeDouble("y",root)				
-		 );		
-	}
-	
-	
-	
+
 	
 	private void loadStaticAgent(String filePath){
 		try {
@@ -230,14 +232,26 @@ public class UrbanSim extends SimState implements VehicleLifecycleObserver,
 				if (nNode.getNodeType() == Node.ELEMENT_NODE) {
 					Element e = (Element) nNode;
 					
+					String type = Utils.readAttributeString("deviceType", e);
+					Long id = Utils.readAttributeLong("id", e);
+					File dev = deviceTypes.get(type);
+					if(dev != null){
 					// Create new agent
-					Agent tmp = new Agent(e,this);
+					Device tmp = new Device(
+											e,
+											id,
+											this,
+											dev,
+											agentTypes,
+											interfaceTypes);
 					
 					// Add agent to static agent list
 					stationaryAgents.add(tmp);
 
 					// Add agent to all list
 					allAgents.add(tmp);
+					
+					}
 				}				
 			}
 		
@@ -245,12 +259,18 @@ public class UrbanSim extends SimState implements VehicleLifecycleObserver,
 
 		} catch (Exception e) {
 			e.printStackTrace();
-		}
-
-		
-		
-		
+		}		
 	}
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
 	
 	
 	
@@ -269,32 +289,76 @@ public class UrbanSim extends SimState implements VehicleLifecycleObserver,
 			Element root = doc.getDocumentElement();
 
 			//read in the elements
-			caseDir  = readElementString("caseDir",root);
-			saveDirectory = caseDir +"/" +readElementString("saveDirectory",root);
-			sumoFile  = readElementString("sumoFile",root);
-			sumoServer  = readElementString("sumoServer",root);
-			deltasPerFile  = readElementInt("deltasPerFile",root);
+			caseDir  = Utils.readElementString("caseDir",root);
+			saveDirectory = caseDir +"/" +Utils.readElementString("saveDirectory",root);
+			sumoFile  = Utils.readElementString("sumoFile",root);
+			sumoServer  = Utils.readElementString("sumoServer",root);
+			deltasPerFile  = Utils.readElementInt("deltasPerFile",root);
 			System.out.println(deltasPerFile);
 			
-			staticAgentFile = caseDir +"/" +readElementString("staticAgentFile",root);
-			agentConfigFile= readElementString("agentConfigFile",root);
-			simulationDurationSeconds= readElementInt("simulationDurationSeconds",root);
-			stepDelta= readElementInt("stepDelta",root);		
-		
+			staticAgentFile = caseDir +"/" +Utils.readElementString("staticAgentFile",root);
 			
-
+			simulationDurationSeconds= Utils.readElementInt("simulationDurationSeconds",root);
+			//stepDelta= Utils.readElementInt("stepDelta",root);	
+			
+			//Load the directories
+			agentTypeDir = caseDir +"/" +Utils.readElementString("agentDir",root);
+			deviceTypeDir = caseDir +"/" +Utils.readElementString("deviceDir",root);
+			interfaceTypeDir = caseDir +"/" +Utils.readElementString("interfaceDir",root);
+			
+			//Read agent types
+			readTypes(agentTypes,agentTypeDir);	
+			//Read interface types
+			readTypes(interfaceTypes,interfaceTypeDir);	
+			//Read device types
+			readTypes(deviceTypes,deviceTypeDir);			
+			
+			
+			
+			
+		
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+		
 
 		return true;
 
 	}
+	
+	private void readTypes(Map<String,File> types, String path){
+		File tmp = new File(path);			
+		File[] files = readFiles(tmp);
+		for(File f:files){
+			System.out.println("loaded "+ stripExtension(f.getName()));
+			types.put(stripExtension(f.getName()),f);
+		}
+	}	
+	private String stripExtension(String name){
+		int pos = name.lastIndexOf(".");
+		if (pos > 0) {
+		    name = name.substring(0, pos);
+		}
+		return name;
+	}
+	
+	private File[] readFiles(File dir){
+		File [] ret = dir.listFiles(
+				new FilenameFilter(){
+					public boolean accept(File dir, String name){
+						return name.endsWith(".xml");
+					}
+				});
+		return ret;
+	}
+	
+	
+	
 	//Calculate agents in range
-	public List<Agent> inRange(Agent agent, int range){
-		List<Agent> agentsInRange = new ArrayList<Agent>();
+	public List<Device> inRange(Device agent, int range){
+		List<Device> agentsInRange = new ArrayList<Device>();
 		Double2D aPos = agent.currentPosition();
-		for(Agent a:allAgents){
+		for(Device a:allAgents){
 			if(aPos.distance(a.currentPosition())<=range && a != agent){
 				agentsInRange.add(a);
 			}

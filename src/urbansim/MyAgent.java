@@ -3,18 +3,18 @@ package urbansim;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.w3c.dom.Element;
+
+import urbansim.p2p.DeviceAgent;
+import urbansim.physical.DeviceInterface;
 import de.matthiasmann.continuations.Coroutine;
 import de.matthiasmann.continuations.CoroutineProto;
 import de.matthiasmann.continuations.SuspendExecution;
 
 public class MyAgent implements DeviceAgent {
 
-	private Device device;
+	private DeviceInterface device;
 	private int floodTTL = 9;
-
-	public MyAgent(Device device) {
-		this.device = device;
-	}
 
 	// This method must be processor friendly. It must call sleep when it has
 	// finished processing
@@ -22,24 +22,24 @@ public class MyAgent implements DeviceAgent {
 		do {
 
 			//Remove all old connections
-			for(Device d:device.activeConnections()){
+			for(DeviceInterface d:device.activeConnections()){
 				device.disconnect(d);
 			}
 			// Scan for devices
-			List<Device> inRange = device.scan();
+			List<DeviceInterface> inRange = device.scan();
 			
 			//connect to them all
-			for (Device d : inRange) {
+			for (DeviceInterface d : inRange) {
 				device.connect(d);
 			}
 		
 
 			// send message if we are the source.
-			if (device.getName().equals("static@34")) {
+			if (device.getName().equals("flood@34")) {
 				// System.out.println("Source");
-				Flood flood = new Flood(floodTTL, "static@20");
+				Flood flood = new Flood(floodTTL, "flood@20");
 				// send to everyone we can.
-				for(Device d:device.activeConnections()){
+				for(DeviceInterface d:device.activeConnections()){
 					Message msg = new Message(device, flood, d, 0);
 					device.sendTo(d, msg);
 					//System.out.println("Send Message");
@@ -60,13 +60,13 @@ public class MyAgent implements DeviceAgent {
 						Flood recvd = (Flood) rcv.obj;
 						//System.out.println(recvd.ttl);
 						if (recvd.ttl <= 0) {
-							System.out.println("Dropped");
+							//System.out.println("Dropped");
 							// don't forward the message
 						} else {
 							//System.out.println(recvd.ttl);
 							// decrease ttl;
 							Flood tmp = new Flood(recvd.ttl--, recvd.target);
-							for (Device d : inRange) {
+							for (DeviceInterface d : inRange) {
 								if (d != rcv.src) {
 									//System.out.println("Forwarded");
 									Message msg = new Message(device, tmp, d, 0);
@@ -84,6 +84,11 @@ public class MyAgent implements DeviceAgent {
 			// sleep when done
 			device.sleep();
 		} while (true);
+	}
+
+	@Override
+	public void constructor(DeviceInterface device, Element root) {
+		this.device = device;
 	}
 
 }

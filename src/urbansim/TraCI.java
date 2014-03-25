@@ -80,8 +80,8 @@ public class TraCI implements Steppable{
 		//update mobile positions here
 		
 		MultiQuery mq = conn.makeMultiQuery();
-		for(Entry<String, Agent> entry: urbansim.mobileAgents.entrySet()){
-			Agent tmp = entry.getValue();
+		for(Entry<String, Device> entry: urbansim.mobileAgents.entrySet()){
+			Device tmp = entry.getValue();
 			mq.add(tmp.v.queryReadPosition());	
 		}
 		try {
@@ -92,8 +92,8 @@ public class TraCI implements Steppable{
 		}
 		System.out.println("Multiquery done!");
 		
-		for(Entry<String, Agent> entry: urbansim.mobileAgents.entrySet()){
-			Agent tmp = entry.getValue();
+		for(Entry<String, Device> entry: urbansim.mobileAgents.entrySet()){
+			Device tmp = entry.getValue();
 			
 			Point2D pos = new Point2D.Double();
 			try {

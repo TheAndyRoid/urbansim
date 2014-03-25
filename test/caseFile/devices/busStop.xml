@@ -1,0 +1,7 @@
+<?xml version="1.0"?>
+<busStop>
+  <agent type="flood"/>
+  <interface type='wifi'/>
+  <battery lifeInSeconds='1500'/>
+</busStop>
+

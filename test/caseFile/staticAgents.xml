@@ -1,108 +1,108 @@
 <?xml version="1.0"?>
 <Simulation>
-    <agent id="0" type="static">
+    <agent id="0"  deviceType="busStop">
       <position x="130.67967374367282" y="490"/>
     </agent>
-    <agent id="1" type="static">
+    <agent id="1"  deviceType="busStop">
       <position x="490" y="373.89923748732144"/>
     </agent>
-    <agent id="2" type="static">
+    <agent id="2"  deviceType="busStop">
       <position x="323.5803822489793" y="10"/>
     </agent>
-    <agent id="3" type="static">
+    <agent id="3"  deviceType="busStop">
       <position x="10" y="154.4294308482593"/>
     </agent>
-    <agent id="4" type="static">
+    <agent id="4"  deviceType="busStop">
       <position x="109.39611884015748" y="490"/>
     </agent>
-    <agent id="5" type="static">
+    <agent id="5"  deviceType="busStop">
       <position x="490" y="394.67536409342966"/>
     </agent>
-    <agent id="6" type="static">
+    <agent id="6"  deviceType="busStop">
       <position x="432.37734251568867" y="10"/>
     </agent>
-    <agent id="7" type="static">
+    <agent id="7"  deviceType="busStop">
       <position x="10" y="132.6723578580949"/>
     </agent>
-    <agent id="8" type="static">
+    <agent id="8"  deviceType="busStop">
       <position x="88.69949228119586" y="490"/>
     </agent>
-    <agent id="9" type="static">
+    <agent id="9"  deviceType="busStop">
       <position x="490" y="415.6668323139144"/>
     </agent>
-    <agent id="10" type="static">
+    <agent id="10"  deviceType="busStop">
       <position x="450.4914076105877" y="10"/>
     </agent>
-    <agent id="11" type="static">
+    <agent id="11"  deviceType="busStop">
       <position x="10" y="25.58549192717214"/>
     </agent>
-    <agent id="12" type="static">
+    <agent id="12"  deviceType="busStop">
       <position x="65.42737171010197" y="490"/>
     </agent>
-    <agent id="13" type="static">
+    <agent id="13"  deviceType="busStop">
       <position x="490" y="449.40983825977753"/>
     </agent>
-    <agent id="14" type="static">
+    <agent id="14"  deviceType="busStop">
       <position x="489.21992799005847" y="10"/>
     </agent>
-    <agent id="15" type="static">
+    <agent id="15"  deviceType="busStop">
       <position x="13.391012288695379" y="10"/>
     </agent>
-    <agent id="16" type="static">
+    <agent id="16"  deviceType="busStop">
       <position x="10" y="474.1832001425424"/>
     </agent>
-    <agent id="17" type="static">
+    <agent id="17"  deviceType="busStop">
       <position x="393.1645302002095" y="490"/>
     </agent>
-    <agent id="18" type="static">
+    <agent id="18"  deviceType="busStop">
       <position x="490" y="111.95315332012245"/>
     </agent>
-    <agent id="19" type="static">
+    <agent id="19"  deviceType="busStop">
       <position x="108.6274966682306" y="10"/>
     </agent>
-    <agent id="20" type="static">
+    <agent id="20"  deviceType="busStop">
       <position x="10" y="360.5731944681146"/>
     </agent>
-    <agent id="21" type="static">
+    <agent id="21"  deviceType="busStop">
       <position x="298.1746018582024" y="490"/>
     </agent>
-    <agent id="22" type="static">
+    <agent id="22"  deviceType="busStop">
       <position x="490" y="196.81130218002943"/>
     </agent>
-    <agent id="23" type="static">
+    <agent id="23"  deviceType="busStop">
       <position x="201.37572099510572" y="10"/>
     </agent>
-    <agent id="24" type="static">
+    <agent id="24"  deviceType="busStop">
       <position x="10" y="265.43724421616656"/>
     </agent>
-    <agent id="25" type="static">
+    <agent id="25"  deviceType="busStop">
       <position x="490" y="292.06243925262237"/>
     </agent>
-    <agent id="26" type="static">
+    <agent id="26"  deviceType="busStop">
       <position x="219.78193418548048" y="490"/>
     </agent>
-    <agent id="27" type="static">
+    <agent id="27"  deviceType="busStop">
       <position x="299.0777982870116" y="10"/>
     </agent>
-    <agent id="28" type="static">
+    <agent id="28"  deviceType="busStop">
       <position x="10" y="178.19827870288867"/>
     </agent>
-    <agent id="29" type="static">
+    <agent id="29"  deviceType="busStop">
       <position x="490" y="349.09426263859496"/>
     </agent>
-    <agent id="30" type="static">
+    <agent id="30"  deviceType="busStop">
       <position x="153.44114912903714" y="490"/>
     </agent>
-    <agent id="31" type="static">
+    <agent id="31"  deviceType="busStop">
       <position x="414.3630528533831" y="10"/>
     </agent>
-    <agent id="32" type="static">
+    <agent id="32"  deviceType="busStop">
       <position x="10" y="41.40846266942099"/>
     </agent>
-    <agent id="33" type="static">
+    <agent id="33"  deviceType="busStop">
       <position x="11.496544463187456" y="490"/>
     </agent>
-    <agent id="34" type="static">
+    <agent id="34"  deviceType="busStop">
       <position x="490" y="490"/>
     </agent>
 </Simulation>
