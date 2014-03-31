@@ -26,6 +26,7 @@ public class Message extends ToXML implements Comparable<Message> {
 	public double recvtime = 0;
 	public boolean isSender;
 
+
 	public Element toXML(Element root, Document doc) {
 		// create agent element
 		Element emsg = doc.createElement("msg");
@@ -40,12 +41,14 @@ public class Message extends ToXML implements Comparable<Message> {
 
 		// sender
 		Element sender = doc.createElement("src");
-		sender.setAttribute("type", ((Device) src).getType());
+		sender.setAttribute("agentType", ((Device) src).getAgentType());
+		sender.setAttribute("deviceType", ((Device) src).getDeviceType());
 		sender.setAttribute("id", Long.toString(((Device) src).getID()));
 		emsg.appendChild(sender);
 		// Receiver
 		Element receiver = doc.createElement("dst");
-		receiver.setAttribute("type", ((Device) dst).getType());
+		receiver.setAttribute("agentType", ((Device) dst).getAgentType());
+		receiver.setAttribute("deviceType", ((Device) dst).getDeviceType());
 		receiver.setAttribute("id", Long.toString(((Device) dst).getID()));
 		emsg.appendChild(receiver);
 		

@@ -9,5 +9,5 @@
   <agentDir>agents</agentDir>
   <saveDirectory>data</saveDirectory>
   <simulationDurationSeconds>50000</simulationDurationSeconds>
-  <deltasPerFile>60</deltasPerFile>
+  <deltasPerFile>1</deltasPerFile>
 </simulation>

@@ -3,14 +3,18 @@
   <concurentConnections c='6'/>
   <compatableWith>
     <wifi/>
+    <superwifi/>
   </compatableWith>
   <bitrate bps="1000"/>
-  <maxrange m="50"/>
+  <maxrange m="150"/>
   <handshake ms="2"/>
   <bitrateAtDistance>
-    <point  meters='0' bps='1500'/>
-    <point  meters='10' bps='500'/>
-    <point  meters='15' bps='0'/>
+    <point  meters='0' kbps='1500'/>
+    <point  meters='10' kbps='1200'/>
+    <point  meters='20' kbps='800'/>
+    <point  meters='30' kbps='500'/>
+    <point  meters='40' kbps='10'/>
+    <point  meters='45' kbps='0'/>
   </bitrateAtDistance>
   <scanTime ms='200'/>
 </wifi>

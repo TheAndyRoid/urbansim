@@ -32,15 +32,16 @@ public class MyAgent implements DeviceAgent {
 			for (DeviceInterface d : inRange) {
 				device.connect(d);
 			}
-		
+			//System.out.println(device.getName());
 
 			// send message if we are the source.
-			if (device.getName().equals("flood@34")) {
-				// System.out.println("Source");
-				Flood flood = new Flood(floodTTL, "flood@20");
+			if (device.getName().equals("busStop@flood@34")) {
+				//System.out.println("Source");
+				//System.out.println(device.getName());
+				Flood flood = new Flood(floodTTL, "busStop@flood@20");
 				// send to everyone we can.
 				for(DeviceInterface d:device.activeConnections()){
-					Message msg = new Message(device, flood, d, 0);
+					Message msg = new Message(device, flood, d, 500);
 					device.sendTo(d, msg);
 					//System.out.println("Send Message");
 				}
@@ -49,11 +50,12 @@ public class MyAgent implements DeviceAgent {
 				Message rcv = device.recv();
 				while(rcv != null) {
 
+					
 					if (((Flood) rcv.obj).target.equals(device.getName())) {
 						// hack exit
 						System.out.println("Message            Recived");
-						System.out.println("Message            Recived");
-						System.out.println("Message            Recived");
+						//System.out.println("Message            Recived");
+						//System.out.println("Message            Recived");
 						//System.exit(0);
 					} else {
 												

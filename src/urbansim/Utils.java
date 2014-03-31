@@ -42,4 +42,13 @@ public class Utils {
 				readAttributeDouble("y",root)				
 		 );		
 	}
+	
+	static public String stripExtension(String name){
+		int pos = name.lastIndexOf(".");
+		if (pos > 0) {
+		    name = name.substring(0, pos);
+		}
+		return name;
+	}
+	
 }

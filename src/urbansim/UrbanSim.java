@@ -28,6 +28,7 @@ import sim.field.continuous.*;
 import sim.field.grid.DoubleGrid2D;
 import sim.field.grid.SparseGrid2D;
 import sim.field.network.Network;
+import urbansim.physical.WirelessConnection;
 
 public class UrbanSim extends SimState implements VehicleLifecycleObserver,
 		Steppable {
@@ -330,17 +331,11 @@ public class UrbanSim extends SimState implements VehicleLifecycleObserver,
 		File tmp = new File(path);			
 		File[] files = readFiles(tmp);
 		for(File f:files){
-			System.out.println("loaded "+ stripExtension(f.getName()));
-			types.put(stripExtension(f.getName()),f);
+			System.out.println("loaded "+ Utils.stripExtension(f.getName()));
+			types.put(Utils.stripExtension(f.getName()),f);
 		}
 	}	
-	private String stripExtension(String name){
-		int pos = name.lastIndexOf(".");
-		if (pos > 0) {
-		    name = name.substring(0, pos);
-		}
-		return name;
-	}
+	
 	
 	private File[] readFiles(File dir){
 		File [] ret = dir.listFiles(
@@ -355,12 +350,15 @@ public class UrbanSim extends SimState implements VehicleLifecycleObserver,
 	
 	
 	//Calculate agents in range
-	public List<Device> inRange(Device agent, int range){
+	public List<Device> inRange(Device agent, WirelessConnection winterface){
+		double range = winterface.maxRange();
 		List<Device> agentsInRange = new ArrayList<Device>();
 		Double2D aPos = agent.currentPosition();
 		for(Device a:allAgents){
-			if(aPos.distance(a.currentPosition())<=range && a != agent){
-				agentsInRange.add(a);
+			if(winterface.isCompatible(a.getInterface())){
+				if(aPos.distance(a.currentPosition())<=range && a != agent){
+					agentsInRange.add(a);
+				}		
 			}
 		}
 		return agentsInRange;
