@@ -2,6 +2,8 @@
 <busStop>
   <agent type="flood"/>
   <interface type='wifi'/>
-  <battery lifeInSeconds='1500'/>
+  <battery type='unlimited'/>
+  <cpusleepdrain mahs="5"/>    
+  <cpudrain mahs="5"/>   
 </busStop>
 

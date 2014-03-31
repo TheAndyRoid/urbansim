@@ -10,7 +10,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.PriorityQueue;
 import java.util.Queue;
-
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -28,6 +27,7 @@ import sim.util.*;
 import sim.field.continuous.*;
 import sim.field.network.Edge;
 import urbansim.p2p.DeviceAgent;
+import urbansim.physical.Battery;
 import urbansim.physical.DeviceInterface;
 import urbansim.physical.PhysicalComponent;
 import urbansim.physical.WirelessConnection;
@@ -41,10 +41,12 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 	private String deviceType;
 	private String agentType;
 	private String interfaceType;
+	private String batteryType;
 	private long agentID;
 	private SimState simState;
 	private DeviceAgent userAgent;
 	private WirelessConnection wirelessInterface;
+	private Battery battery;
 
 	private int range = 50;
 
@@ -87,8 +89,8 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 	// Load static device
 	public Device(Element agentElement, Long id, SimState state,
 			File deviceType, Map<String, File> agentTypes,
-			Map<String, File> interfaceTypes,Map<String, File> agentData) {
-		this(id, state, deviceType, agentTypes, interfaceTypes,agentData);
+			Map<String, File> interfaceTypes,Map<String, File> agentData,Map<String, File> batteryTypes) {
+		this(id, state, deviceType, agentTypes, interfaceTypes,agentData,batteryTypes);
 		// Load the position
 		Element ePos = (Element) agentElement.getElementsByTagName("position")
 				.item(0);
@@ -97,12 +99,12 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 
 	// Load from sumo
 	public Device(Long id, SimState state, File deviceType,
-			Map<String, File> agentTypes, Map<String, File> interfaceTypes,Map<String, File> agentData) {
+			Map<String, File> agentTypes, Map<String, File> interfaceTypes,Map<String, File> agentData,Map<String, File> batteryTypes) {
 		agentID = id;
 		simState = state;
 
 		// Read agent and interface in.
-		readAgent(deviceType, agentTypes, interfaceTypes,agentData);
+		readAgent(deviceType, agentTypes, interfaceTypes,agentData,batteryTypes);
 
 		co = new Coroutine(this);
 
@@ -157,17 +159,25 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 	// Called by MASON
 	public void step(SimState state) {
 		time();
-		if (agentTime < startTime + 1000) {
+		if (agentTime < startTime + 1000 && battery.hasPower()) {
+			if(battery.batteryRemaining() != 1){
+				System.out.println(getName()+" battery remaining :"+battery.batteryRemaining());
+			}
 			running.lock();
 			try {
 				if (co.getState() != Coroutine.State.RUNNING
 						&& co.getState() != Coroutine.State.FINISHED) {
+					battery.startTimer(); 
 					do {
+						double startTime = agentTime;
 						co.run();
+						double stopTime = agentTime;
+						battery.mainloop(stopTime-startTime);
 					} while ((agentTime < startTime + 1000)
 							&& !recvBuffer.isEmpty());
 					// update connections ui
 					// updateUI();
+					battery.stopTimer(); 
 				}
 
 			} finally {
@@ -179,10 +189,14 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 
 	// read from file
 	public void readAgent(File deviceType, Map<String, File> agentTypes,
-			Map<String, File> interfaceTypes,Map<String, File> agentData) {
+			Map<String, File> interfaceTypes,Map<String, File> agentData,Map<String, File> batteryTypes) {
 		// agentID = Utils.readAttributeLong("id", eAgent);
 		File agent = null;
 		File deviceInterface = null;
+		File deviceBattery = null;
+		
+		Double cpusleepDrain = 0.0;
+		Double cpuDrain = 0.0;
 
 		// Read the device file
 		try {
@@ -193,7 +207,7 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 
 			doc.getDocumentElement().normalize();
 
-			// Element e = doc.getDocumentElement();
+			 Element d = doc.getDocumentElement();
 
 			this.deviceType = Utils.stripExtension(deviceType.getName());
 
@@ -209,6 +223,19 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 					doc.getDocumentElement());
 			interfaceType = Utils.readAttributeString("type", i);
 			deviceInterface = interfaceTypes.get(interfaceType);
+			
+			// Read the battery Type
+			Element b = Utils.getChildElement("battery", doc.getDocumentElement());
+			batteryType = Utils.readAttributeString("type",b);
+			deviceBattery = batteryTypes.get(batteryType);
+			
+			cpusleepDrain = Utils.readAttributeDouble("mahs",Utils.getChildElement("cpusleepdrain", doc.getDocumentElement()));
+			cpuDrain = Utils.readAttributeDouble("mahs",Utils.getChildElement("cpudrain", doc.getDocumentElement()));
+			
+			
+					
+			
+			
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -253,6 +280,13 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 		// Create Interface
 
 		wirelessInterface = new WirelessConnection(deviceInterface);
+		
+		//Create Battery
+		battery = new Battery(deviceBattery,
+					cpuDrain,
+					cpusleepDrain,
+						wirelessInterface.getScanDrain(),
+						wirelessInterface.getDrain());
 
 		// System.out.println(wirelessInterface.connectionTime());
 
@@ -388,7 +422,10 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 						if (co.getState() != Coroutine.State.RUNNING
 								&& co.getState() != Coroutine.State.FINISHED) {
 
+							double startTime = agentTime;
 							co.run();
+							double stopTime = agentTime;
+							battery.mainloop(stopTime-startTime);
 						}
 					}
 				} finally {
@@ -480,10 +517,11 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 	public List<DeviceInterface> scan() throws SuspendExecution {
 		// Time to perform a scan
 		agentTime += wirelessInterface.scanTime();
-
+		battery.wifiScan(wirelessInterface.scanTime());
+		
 		UrbanSim urbansim = (UrbanSim) simState;
 		List<Device> inRange = urbansim.inRange(this, wirelessInterface);
-
+		
 		checkGotTime();
 		// This is a hack cast, but should be OK
 		return (List<DeviceInterface>) (List<?>) inRange;
@@ -607,5 +645,8 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 			result = false;
 		}
 		return result;
+	}
+	public boolean hasPower(){
+		return battery.hasPower();
 	}
 }

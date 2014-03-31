@@ -9,6 +9,7 @@
   <agentDir>agents</agentDir>
   <saveDirectory>data</saveDirectory>
   <agentDataDir>agentData</agentDataDir>
+  <batteryDir>battery</batteryDir>
   <simulationDurationSeconds>50000</simulationDurationSeconds>
   <deltasPerFile>1</deltasPerFile>
 </simulation>

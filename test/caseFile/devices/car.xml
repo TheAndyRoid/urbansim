@@ -2,7 +2,9 @@
 <car>
   <agent type="flood"/>
   <interface type='wifi'/>
-  <battery lifeInSeconds='1500'/>
+  <battery type='3000mah'/> 
+  <cpusleepdrain mahs="5"/>    
+  <cpudrain mahs="1"/>   
   <sumoType type="car"/>
 </car>
 

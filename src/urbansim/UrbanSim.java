@@ -61,11 +61,13 @@ public class UrbanSim extends SimState implements VehicleLifecycleObserver,
 	private String deviceTypeDir;
 	private String interfaceTypeDir;
 	private String agentDataDir;
+	private String batteryTypeDir;
 	
 	private Map<String,File> agentTypes = new HashMap<String,File>();
 	private Map<String,File> deviceTypes= new HashMap<String,File>();
 	private Map<String,File> interfaceTypes = new HashMap<String,File>();
 	private Map<String,File> agentData = new HashMap<String,File>();
+	private Map<String,File> batteryTypes = new HashMap<String,File>();
 	
 	private Map<String,Long> id = new HashMap<String,Long>();
 	
@@ -169,7 +171,8 @@ public class UrbanSim extends SimState implements VehicleLifecycleObserver,
 								dev,
 								agentTypes,
 								interfaceTypes,
-								agentData);
+								agentData,
+								batteryTypes);
 		
 		// Create new agent
 				//Device tmp = new Device("mobile",nextAgentID,this);
@@ -247,7 +250,8 @@ public class UrbanSim extends SimState implements VehicleLifecycleObserver,
 											dev,
 											agentTypes,
 											interfaceTypes,
-											agentData);
+											agentData,
+											batteryTypes);
 					
 					// Add agent to static agent list
 					stationaryAgents.add(tmp);
@@ -310,6 +314,7 @@ public class UrbanSim extends SimState implements VehicleLifecycleObserver,
 			deviceTypeDir = caseDir +"/" +Utils.readElementString("deviceDir",root);
 			interfaceTypeDir = caseDir +"/" +Utils.readElementString("interfaceDir",root);
 			agentDataDir = caseDir +"/" +Utils.readElementString("agentDataDir",root);
+			batteryTypeDir = caseDir +"/" +Utils.readElementString("batteryDir",root);
 			
 			//Read agent types
 			readTypes(agentTypes,agentTypeDir);	
@@ -319,7 +324,8 @@ public class UrbanSim extends SimState implements VehicleLifecycleObserver,
 			readTypes(deviceTypes,deviceTypeDir);	
 			//Read agent specific data
 			readTypes(agentData,agentDataDir);
-			
+			//Read battery
+			readTypes(batteryTypes,batteryTypeDir);
 			
 			
 			
@@ -362,7 +368,7 @@ public class UrbanSim extends SimState implements VehicleLifecycleObserver,
 		Double2D aPos = agent.currentPosition();
 		for(Device a:allAgents){
 			if(winterface.isCompatible(a.getInterface())){
-				if(aPos.distance(a.currentPosition())<=range && a != agent){
+				if(aPos.distance(a.currentPosition())<=range && a != agent && a.hasPower()){
 					agentsInRange.add(a);
 				}		
 			}

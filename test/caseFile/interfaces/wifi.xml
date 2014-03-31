@@ -5,7 +5,6 @@
     <wifi/>
     <superwifi/>
   </compatableWith>
-  <bitrate bps="1000"/>
   <maxrange m="150"/>
   <handshake ms="2"/>
   <bitrateAtDistance>
@@ -17,5 +16,7 @@
     <point  meters='45' kbps='0'/>
   </bitrateAtDistance>
   <scanTime ms='200'/>
+  <drain mahs='0.8'/>
+  <scanDrain mahs='0.5'/>
 </wifi>
 

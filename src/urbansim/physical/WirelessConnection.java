@@ -21,12 +21,13 @@ import urbansim.Utils;
 
 public class WirelessConnection extends ToXML{
 
-	
+	private double drainRate;
+	private double scanRate;
 	private String type;
 	private Set<String> compatibleWith = new HashSet<String>();
 	private int scanTime;
 	private int concurrentConnections = 0;
-		private double maxRange;
+	private double maxRange;
 	private int handshake;
 	private TreeMap<Double,Integer> distanceToBitrate = new TreeMap<Double,Integer>();
 	
@@ -51,7 +52,10 @@ public class WirelessConnection extends ToXML{
 		type = root.getTagName();
 		concurrentConnections = Utils.readAttributeInt("c",Utils.getChildElement("concurentConnections",root));
 		//System.out.println(concurrentConnections);
+		drainRate = Utils.readAttributeDouble("mahs",Utils.getChildElement("drain",root));
+		scanRate = Utils.readAttributeDouble("mahs",Utils.getChildElement("scanDrain",root));
 		scanTime = Utils.readAttributeInt("ms",Utils.getChildElement("scanTime",root));
+		
 		
 		
 		Element B = Utils.getChildElement("bitrateAtDistance",root);
@@ -158,6 +162,15 @@ public class WirelessConnection extends ToXML{
 	public int maxConnections(){
 		return concurrentConnections;
 	}
+	
+	public double getScanDrain(){
+		return scanRate;
+	}
+	
+	public double getDrain(){
+		return drainRate;
+	}
+		
 
 	@Override
 	public Element toXML(Element root, Document doc) {
