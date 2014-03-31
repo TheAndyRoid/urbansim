@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <wifi>
-  <concurentConnections c='6'/>
+  <concurentConnections c='3'/>
   <compatableWith>
     <wifi/>
     <superwifi/>

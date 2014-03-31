@@ -25,6 +25,7 @@ public class MyAgent implements DeviceAgent {
 			for(DeviceInterface d:device.activeConnections()){
 				device.disconnect(d);
 			}
+			
 			// Scan for devices
 			List<DeviceInterface> inRange = device.scan();
 			
@@ -89,7 +90,10 @@ public class MyAgent implements DeviceAgent {
 	}
 
 	@Override
-	public void constructor(DeviceInterface device, Element root) {
+	public void constructor(DeviceInterface device, Element generic, Element agentSpecific) {
+		if(agentSpecific != null){
+			System.out.println(device.getName() + " got agent specific data");
+		}
 		this.device = device;
 	}
 

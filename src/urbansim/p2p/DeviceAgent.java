@@ -8,5 +8,5 @@ import de.matthiasmann.continuations.SuspendExecution;
 public interface DeviceAgent {
 	// The only function that needs to be implemented by the simulation user.
 	void main() throws SuspendExecution;
-	void constructor(DeviceInterface device,Element root);
+	void constructor(DeviceInterface device,Element genericData, Element agentSpecificDate);
 }

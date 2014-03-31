@@ -60,11 +60,12 @@ public class UrbanSim extends SimState implements VehicleLifecycleObserver,
 	private String agentTypeDir;
 	private String deviceTypeDir;
 	private String interfaceTypeDir;
-	
+	private String agentDataDir;
 	
 	private Map<String,File> agentTypes = new HashMap<String,File>();
 	private Map<String,File> deviceTypes= new HashMap<String,File>();
-	private Map<String,File> interfaceTypes = new HashMap<String,File>();	
+	private Map<String,File> interfaceTypes = new HashMap<String,File>();
+	private Map<String,File> agentData = new HashMap<String,File>();
 	
 	private Map<String,Long> id = new HashMap<String,Long>();
 	
@@ -167,7 +168,8 @@ public class UrbanSim extends SimState implements VehicleLifecycleObserver,
 								this,
 								dev,
 								agentTypes,
-								interfaceTypes);
+								interfaceTypes,
+								agentData);
 		
 		// Create new agent
 				//Device tmp = new Device("mobile",nextAgentID,this);
@@ -244,7 +246,8 @@ public class UrbanSim extends SimState implements VehicleLifecycleObserver,
 											this,
 											dev,
 											agentTypes,
-											interfaceTypes);
+											interfaceTypes,
+											agentData);
 					
 					// Add agent to static agent list
 					stationaryAgents.add(tmp);
@@ -306,13 +309,16 @@ public class UrbanSim extends SimState implements VehicleLifecycleObserver,
 			agentTypeDir = caseDir +"/" +Utils.readElementString("agentDir",root);
 			deviceTypeDir = caseDir +"/" +Utils.readElementString("deviceDir",root);
 			interfaceTypeDir = caseDir +"/" +Utils.readElementString("interfaceDir",root);
+			agentDataDir = caseDir +"/" +Utils.readElementString("agentDataDir",root);
 			
 			//Read agent types
 			readTypes(agentTypes,agentTypeDir);	
 			//Read interface types
 			readTypes(interfaceTypes,interfaceTypeDir);	
 			//Read device types
-			readTypes(deviceTypes,deviceTypeDir);			
+			readTypes(deviceTypes,deviceTypeDir);	
+			//Read agent specific data
+			readTypes(agentData,agentDataDir);
 			
 			
 			

@@ -25,19 +25,22 @@ public class WirelessConnection extends ToXML{
 	private String type;
 	private Set<String> compatibleWith = new HashSet<String>();
 	private int scanTime;
-	private int concurrentConnections;
+	private int concurrentConnections = 0;
 		private double maxRange;
 	private int handshake;
 	private TreeMap<Double,Integer> distanceToBitrate = new TreeMap<Double,Integer>();
 	
-	public WirelessConnection(String filePath){
+	
+	
+	
+	
+	public WirelessConnection(File file){
 		try {
 
-		File fXmlFile = new File(filePath);
 		DocumentBuilderFactory dbFactory = DocumentBuilderFactory
 				.newInstance();
 		DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
-		Document doc = dBuilder.parse(fXmlFile);
+		Document doc = dBuilder.parse(file);
 
 		doc.getDocumentElement().normalize();
 
@@ -47,6 +50,7 @@ public class WirelessConnection extends ToXML{
 		//Read in the values
 		type = root.getTagName();
 		concurrentConnections = Utils.readAttributeInt("c",Utils.getChildElement("concurentConnections",root));
+		//System.out.println(concurrentConnections);
 		scanTime = Utils.readAttributeInt("ms",Utils.getChildElement("scanTime",root));
 		
 		
@@ -82,7 +86,7 @@ public class WirelessConnection extends ToXML{
 			}
 		}
 		
-		System.out.println(compatibleWith);
+		//System.out.println(compatibleWith);
 		
 		handshake = Utils.readAttributeInt("ms",Utils.getChildElement("handshake",root));
 		

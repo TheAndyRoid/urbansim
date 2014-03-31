@@ -49,6 +49,7 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 	private int range = 50;
 
 	private Lock running = new ReentrantLock();
+	private Lock connection = new ReentrantLock();
 
 	private double startTime = 0;
 	private double agentTime = 0;
@@ -67,7 +68,7 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 	private List<Edge> activeConnections = new ArrayList<Edge>();
 
 	private void checkGotTime() throws SuspendExecution {
-		if (agentTime >= startTime + 1000) {
+		if (agentTime > startTime + 1000) {
 			Coroutine.yield();
 		}
 	}
@@ -86,8 +87,8 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 	// Load static device
 	public Device(Element agentElement, Long id, SimState state,
 			File deviceType, Map<String, File> agentTypes,
-			Map<String, File> interfaceTypes) {
-		this(id, state, deviceType, agentTypes, interfaceTypes);
+			Map<String, File> interfaceTypes,Map<String, File> agentData) {
+		this(id, state, deviceType, agentTypes, interfaceTypes,agentData);
 		// Load the position
 		Element ePos = (Element) agentElement.getElementsByTagName("position")
 				.item(0);
@@ -96,12 +97,12 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 
 	// Load from sumo
 	public Device(Long id, SimState state, File deviceType,
-			Map<String, File> agentTypes, Map<String, File> interfaceTypes) {
+			Map<String, File> agentTypes, Map<String, File> interfaceTypes,Map<String, File> agentData) {
 		agentID = id;
 		simState = state;
 
 		// Read agent and interface in.
-		readAgent(deviceType, agentTypes, interfaceTypes);
+		readAgent(deviceType, agentTypes, interfaceTypes,agentData);
 
 		co = new Coroutine(this);
 
@@ -166,7 +167,7 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 					} while ((agentTime < startTime + 1000)
 							&& !recvBuffer.isEmpty());
 					// update connections ui
-					updateUI();
+					// updateUI();
 				}
 
 			} finally {
@@ -178,7 +179,7 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 
 	// read from file
 	public void readAgent(File deviceType, Map<String, File> agentTypes,
-			Map<String, File> interfaceTypes) {
+			Map<String, File> interfaceTypes,Map<String, File> agentData) {
 		// agentID = Utils.readAttributeLong("id", eAgent);
 		File agent = null;
 		File deviceInterface = null;
@@ -221,13 +222,29 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 
 			doc.getDocumentElement().normalize();
 
+			//Create agent based on class name suppiled
 			Element flood = Utils.getChildElement("class",
 					doc.getDocumentElement());
 			String className = Utils.readAttributeString("name", flood);
-
 			Class<?> clazz = Class.forName(className);
 			userAgent = (DeviceAgent) clazz.newInstance();
-			userAgent.constructor(this, flood);
+			
+			Element agentGenericElement = doc.getDocumentElement();
+			
+			File agentFile = agentData.get(getName());
+			Element agentDataElement = null;
+			if(agentFile!=null){
+				DocumentBuilderFactory aFactory = DocumentBuilderFactory
+						.newInstance();
+				DocumentBuilder aBuilder = aFactory.newDocumentBuilder();
+				Document adoc = aBuilder.parse(agentFile);
+				agentDataElement = adoc.getDocumentElement();				
+			}
+			
+			
+			
+			
+			userAgent.constructor(this, agentGenericElement,agentDataElement);
 
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -235,35 +252,82 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 
 		// Create Interface
 
-		wirelessInterface = new WirelessConnection(deviceInterface.getPath());
+		wirelessInterface = new WirelessConnection(deviceInterface);
 
 		// System.out.println(wirelessInterface.connectionTime());
 
 	}
 
-	private boolean addConnection(Device b) {
+	private void connected(){
+		
+	}
+	
+	
+	
+	private boolean addConnection(Device d) {
+		boolean result;
+		Edge e = new Edge(this, d, new Double(0));
 
-		Edge e = new Edge(this, b, new Double(0));
-		synchronized (activeConnections) {
-			activeConnections.add(e);
+		//System.out.println(activeConnections.size());
+		connection.lock();
+		try {
+			// can we make the connection
+			if ((activeConnections.size() < wirelessInterface.maxConnections())) {
+				// Did the other device acceptConnection
+				if (d.acceptConnection(this)) {
+					activeConnections.add(e);
+
+					// need to update the ui
+					UrbanSim urbansim = (UrbanSim) simState;
+					synchronized (urbansim.connected) {
+						urbansim.connected.addEdge(e);
+					}
+					result = true;
+				} else {
+					result = false;
+				}
+			}else{
+			result = false;
+			}
+		} finally {
+			connection.unlock();
 		}
-		return true;
+		return result;
+	}
+
+	public boolean connectedTo(Device d) {
+		if (findEdge(d) != null) {
+			return true;
+		} else {
+			return false;
+		}
 	}
 
 	public void removeConnection(Device b) {
 		Edge toRemove = findEdge(b);
-
 		if (toRemove != null) {
-			synchronized (activeConnections) {
+			connection.lock();
+			try {
 				activeConnections.remove(toRemove);
+				//System.out.println("Removed edge");
+				// need to update the ui
+				UrbanSim urbansim = (UrbanSim) simState;
+				synchronized (urbansim.connected) {
+					urbansim.connected.removeEdge(toRemove);
+				}
+			} finally {
+				connection.unlock();
 			}
 		}
 	}
 
 	private void resetConnections() {
 		UrbanSim urbansim = (UrbanSim) simState;
-		synchronized (activeConnections) {
+		connection.lock();
+		try {
 			activeConnections.clear();
+		} finally {
+			connection.unlock();
 		}
 		synchronized (urbansim.connected) {
 			urbansim.connected.removeNode(this);
@@ -274,7 +338,8 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 	private Edge findEdge(Device b) {
 		Edge found = null;
 		UrbanSim urbansim = (UrbanSim) simState;
-		synchronized (activeConnections) {
+		connection.lock();
+		try {
 			for (Edge e : activeConnections) {
 				if (e.getOtherNode(this) == b) {
 					// System.out.println("Found edge");
@@ -282,20 +347,10 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 					break;
 				}
 			}
+		} finally {
+			connection.unlock();
 		}
 		return found;
-	}
-
-	private void updateUI() {
-		UrbanSim urbansim = (UrbanSim) simState;
-		synchronized (urbansim.connected) {
-			urbansim.connected.removeNode(this);
-			synchronized (activeConnections) {
-				for (Edge e : activeConnections) {
-					urbansim.connected.addEdge(e);
-				}
-			}
-		}
 	}
 
 	private boolean inRange(Device b) {
@@ -347,24 +402,27 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 	private void sendMessage(DeviceInterface a, Message msg) {
 		Device dst = (Device) a;
 		// System.out.println("Send To!");
-		if (msg != null && inRange(dst)) {
+		if (msg != null && inRange(dst) && connectedTo(dst)) {
 
 			// Time the message was sent
 			msg.sendtime = agentTime;
 
-			//System.out.println("Agent Time " + Double.toString(msg.sendtime));
+			// System.out.println("Agent Time " +
+			// Double.toString(msg.sendtime));
 
-			//  calculate distance
+			// calculate distance
 			Double distance = currentPosition().distance(dst.currentPosition());
 			// Time to send a message
 			agentTime += wirelessInterface.timeToSend(distance, msg.size);
-			/*System.out.println("Transmit Time "
-					+ Double.toString(wirelessInterface.timeToSend(distance,
-							msg.size)));*/
+			/*
+			 * System.out.println("Transmit Time " +
+			 * Double.toString(wirelessInterface.timeToSend(distance,
+			 * msg.size)));
+			 */
 			// time the message should be received
 			msg.recvtime = agentTime;
 
-			//System.out.println("Recv Time " + Double.toString(msg.recvtime));
+			// System.out.println("Recv Time " + Double.toString(msg.recvtime));
 
 			// Log the message as sent.
 			synchronized (logSent) {
@@ -382,8 +440,13 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 
 	// Add message to send buffer
 	public void sendTo(DeviceInterface a, Message msg) throws SuspendExecution {
-		sendMessage(a, msg);
-		checkGotTime();
+		// check that a connection exists
+		if (connectedTo((Device) msg.dst)) {
+			sendMessage(a, msg);
+			checkGotTime();
+		} else {
+			return;
+		}
 	}
 
 	public Message getMessage(Queue<Message> buffer) {
@@ -419,16 +482,15 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 		agentTime += wirelessInterface.scanTime();
 
 		UrbanSim urbansim = (UrbanSim) simState;
-		List<Device> inRange = urbansim.inRange(this,
-				wirelessInterface);
+		List<Device> inRange = urbansim.inRange(this, wirelessInterface);
 
 		checkGotTime();
 		// This is a hack cast, but should be OK
 		return (List<DeviceInterface>) (List<?>) inRange;
 	}
 
-	public WirelessConnection getInterface(){		
-		return wirelessInterface;		
+	public WirelessConnection getInterface() {
+		return wirelessInterface;
 	}
 
 	public void sleep() throws SuspendExecution {
@@ -448,7 +510,11 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 	public boolean connect(DeviceInterface d) throws SuspendExecution {
 		agentTime += wirelessInterface.connectionTime();
 		checkGotTime();
-		return addConnection((Device) d);
+		if(addConnection((Device) d) ){
+			return true;
+		}else{
+			return false;
+		}
 	}
 
 	@Override
@@ -460,10 +526,13 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 
 	private List<DeviceInterface> activeCon() {
 		List<DeviceInterface> connectedTo = new ArrayList<DeviceInterface>();
-		synchronized (activeConnections) {
+		connection.lock();
+		try {
 			for (Edge e : activeConnections) {
 				connectedTo.add((DeviceInterface) e.getOtherNode(this));
 			}
+		} finally {
+			connection.unlock();
 		}
 		return connectedTo;
 	}
@@ -513,4 +582,30 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 
 	}
 
+	public boolean acceptConnection(Device d) {
+		boolean result;
+		if (connection.tryLock()) {
+			try {
+				if(activeConnections.size() < wirelessInterface.maxConnections()){
+					//Can accept connection
+					Edge e = new Edge(this, d, new Double(0));
+					activeConnections.add(e);			
+					
+					// need to update the ui
+					UrbanSim urbansim = (UrbanSim) simState;
+					synchronized (urbansim.connected) {
+						urbansim.connected.addEdge(e);
+					}
+					result = true;
+				}else{
+					result = false;
+				}
+			} finally {
+				connection.unlock();
+			}
+		} else {
+			result = false;
+		}
+		return result;
+	}
 }
