@@ -16,7 +16,7 @@ import urbansim.Utils;
 
 public class Battery {
 
-	private double maxcapacity;
+	private int maxcapacity;
 	private double capacityremaining;
 	
 	private double cpuSleepDrain;
@@ -38,7 +38,7 @@ public class Battery {
 		cpuSleepDrain = cpuSleepRate;
 		wifiScanDrain = wifiScanRate;
 		wifiDrain = wifiRate;
-		System.out.println("Scan Drain Rate"+wifiScanRate);
+		//System.out.println("Scan Drain Rate"+wifiScanRate);
 		
 		try {
 
@@ -52,7 +52,7 @@ public class Battery {
 			Element root = doc.getDocumentElement();
 
 			Element capacitymax = Utils.getChildElement("maxcapacity", root);
-			maxcapacity = Utils.readAttributeDouble("mah", capacitymax);
+			maxcapacity = Utils.readAttributeInt("mah", capacitymax);
 			//TODO introduce rnd() into current capacity
 			capacityremaining = maxcapacity;
 			
@@ -99,8 +99,11 @@ public class Battery {
 
 	// This calculates the total drain for the simulated device.
 	// Using unacounted time as sleep cpu and the current Wireless state
-	public void calculateDrain() {
-
+	public void calculateSleepDrain(Double ms) {
+		if(maxcapacity == -1){
+			return;
+		}
+		capacityremaining = capacityremaining - (ms*cpuSleepDrain);
 	}
 	
 	public long getUserTime( ) {

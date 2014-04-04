@@ -47,6 +47,8 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 	private DeviceAgent userAgent;
 	private WirelessConnection wirelessInterface;
 	private Battery battery;
+	
+	private int stepTime = 1000;
 
 	private int range = 50;
 
@@ -62,7 +64,7 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 	private Coroutine co;
 
 	private Queue<Message> sendBuffer = new LinkedList<Message>();
-	private Queue<Message> recvBuffer = new LinkedList<Message>();
+	private PriorityQueue<Message> recvBuffer = new PriorityQueue<Message>();
 
 	private List<Message> logSent = new ArrayList<Message>();
 	private List<Message> logReceived = new ArrayList<Message>();
@@ -70,7 +72,7 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 	private List<Edge> activeConnections = new ArrayList<Edge>();
 
 	private void checkGotTime() throws SuspendExecution {
-		if (agentTime > startTime + 1000) {
+		if (agentTime > startTime + stepTime) {
 			Coroutine.yield();
 		}
 	}
@@ -86,6 +88,13 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 	 * }
 	 */
 
+	private void recalculateSendTime(){
+		
+		
+	}
+	
+	
+	
 	// Load static device
 	public Device(Element agentElement, Long id, SimState state,
 			File deviceType, Map<String, File> agentTypes,
@@ -150,8 +159,10 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 
 	private void time() {
 		// get time
-		startTime = simState.schedule.getTime() * 1000;
+		startTime = simState.schedule.getTime() * stepTime;
 		if (agentTime < startTime) {
+			//calculate cpu idle time and drain battery
+			battery.calculateSleepDrain(startTime - agentTime);
 			agentTime = startTime;
 		}
 	}
@@ -159,10 +170,8 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 	// Called by MASON
 	public void step(SimState state) {
 		time();
-		if (agentTime < startTime + 1000 && battery.hasPower()) {
-			if(battery.batteryRemaining() != 1){
-				System.out.println(getName()+" battery remaining :"+battery.batteryRemaining());
-			}
+		
+		if (agentTime < (startTime + stepTime) && battery.hasPower()) {
 			running.lock();
 			try {
 				if (co.getState() != Coroutine.State.RUNNING
@@ -173,20 +182,27 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 						co.run();
 						double stopTime = agentTime;
 						battery.mainloop(stopTime-startTime);
-					} while ((agentTime < startTime + 1000)
+					} while ((agentTime < startTime + stepTime)
 							&& !recvBuffer.isEmpty());
 					// update connections ui
-					// updateUI();
+					 
 					battery.stopTimer(); 
 				}
 
 			} finally {
 				running.unlock();
 			}
+		}else if(battery.hasPower() == false && activeConnections.isEmpty() != true){
+			resetConnections();
+			System.out.println("                        Battery Ran OUT");
+
 		}
 
 	}
 
+	
+	
+	
 	// read from file
 	public void readAgent(File deviceType, Map<String, File> agentTypes,
 			Map<String, File> interfaceTypes,Map<String, File> agentData,Map<String, File> batteryTypes) {
@@ -308,13 +324,12 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 			// can we make the connection
 			if ((activeConnections.size() < wirelessInterface.maxConnections())) {
 				// Did the other device acceptConnection
+				
 				if (d.acceptConnection(this)) {
-					activeConnections.add(e);
-
-					// need to update the ui
 					UrbanSim urbansim = (UrbanSim) simState;
 					synchronized (urbansim.connected) {
-						urbansim.connected.addEdge(e);
+					activeConnections.add(e);
+					urbansim.connected.addEdge(e);	
 					}
 					result = true;
 				} else {
@@ -359,15 +374,34 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 		UrbanSim urbansim = (UrbanSim) simState;
 		connection.lock();
 		try {
+			for(Edge e: activeConnections){
+				//inform the other device.
+				((Device)e.getOtherNode(this)).removeConnection(this);
+			}
 			activeConnections.clear();
 		} finally {
 			connection.unlock();
 		}
+		
 		synchronized (urbansim.connected) {
 			urbansim.connected.removeNode(this);
+			updateUI();
 		}
 
 	}
+	
+	private void updateUI() {
+		UrbanSim urbansim = (UrbanSim) simState;
+		synchronized (urbansim.connected) {
+			urbansim.connected.removeNode(this);
+			synchronized (activeConnections) {
+				for (Edge e : activeConnections) {
+					urbansim.connected.addEdge(e);
+				}
+			}
+		}
+	}
+	
 
 	private Edge findEdge(Device b) {
 		Edge found = null;
@@ -414,11 +448,11 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 
 		// Check if this device can be started if not already running
 		// and that the message is not in the next simulation cycle.
-		if (msg.recvtime < (startTime + 1000)) {
+		if (msg.recvtime < (startTime + stepTime)) {
 			if (running.tryLock()) {
 				try {
 					time();
-					if (agentTime < startTime + 1000) {
+					if (agentTime < startTime + stepTime) {
 						if (co.getState() != Coroutine.State.RUNNING
 								&& co.getState() != Coroutine.State.FINISHED) {
 
@@ -451,6 +485,7 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 			Double distance = currentPosition().distance(dst.currentPosition());
 			// Time to send a message
 			agentTime += wirelessInterface.timeToSend(distance, msg.size);
+			
 			/*
 			 * System.out.println("Transmit Time " +
 			 * Double.toString(wirelessInterface.timeToSend(distance,
@@ -494,7 +529,7 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 				msg = null;
 			} else {
 				// System.out.println("Got a message");
-				if (recvBuffer.peek().recvtime < (startTime + 1000)) {
+				if (recvBuffer.peek().recvtime < (startTime + stepTime)) {
 					msg = recvBuffer.remove();
 				} else {
 					msg = null;
@@ -536,7 +571,7 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 	}
 
 	public void sleep(int seconds) throws SuspendExecution {
-		agentTime += seconds * 1000;
+		agentTime += seconds * stepTime;
 		Coroutine.yield();
 	}
 
@@ -629,11 +664,8 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 					Edge e = new Edge(this, d, new Double(0));
 					activeConnections.add(e);			
 					
-					// need to update the ui
-					UrbanSim urbansim = (UrbanSim) simState;
-					synchronized (urbansim.connected) {
-						urbansim.connected.addEdge(e);
-					}
+					// UI updated by caller
+					
 					result = true;
 				}else{
 					result = false;
