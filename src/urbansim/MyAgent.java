@@ -42,7 +42,7 @@ public class MyAgent implements DeviceAgent {
 				Flood flood = new Flood(floodTTL, "busStop@flood@20");
 				// send to everyone we can.
 				for(DeviceInterface d:device.activeConnections()){
-					Message msg = new Message(device, flood, d, 500);
+					Message msg = new Message(device, flood, d, 2000);
 					device.sendTo(d, msg);
 					//System.out.println("Send Message");
 				}

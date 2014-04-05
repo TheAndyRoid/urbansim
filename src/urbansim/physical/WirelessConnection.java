@@ -142,6 +142,13 @@ public class WirelessConnection extends ToXML{
 	public int timeToSend(double distance, int bits){
 		return (int)Math.ceil((double)bits/bitrateAtDistance(distance));
 	} 
+	
+	public int bitsSent(double distance, long time){
+		return (int) Math.floor(
+				bitrateAtDistance(Math.ceil(distance))
+				*time);
+	}
+	
 	//Check if a devices is compatable with this one.
 	public boolean isCompatible(WirelessConnection other){
 		return compatibleWith.contains(other.getType());

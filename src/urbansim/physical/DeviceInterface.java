@@ -16,6 +16,6 @@ public interface DeviceInterface {
 	public void sleep(int seconds) throws SuspendExecution;
 	public String getName();
 	public boolean connect(DeviceInterface d) throws SuspendExecution;
-	public void disconnect(DeviceInterface d);
+	public boolean disconnect(DeviceInterface d);
 	public List<DeviceInterface> activeConnections() throws SuspendExecution;
 }

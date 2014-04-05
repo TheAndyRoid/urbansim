@@ -5,6 +5,7 @@ import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -63,9 +64,13 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 	// java-continuation
 	private Coroutine co;
 
-	private Queue<Message> sendBuffer = new LinkedList<Message>();
+	private List<Message> sendBuffer = new ArrayList<Message>();
+	private Map<Message,Integer> ammountSent = new HashMap<Message,Integer>();
+	
+	
 	private PriorityQueue<Message> recvBuffer = new PriorityQueue<Message>();
 
+	
 	private List<Message> logSent = new ArrayList<Message>();
 	private List<Message> logReceived = new ArrayList<Message>();
 
@@ -77,20 +82,38 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 		}
 	}
 
-	// Simple constructor
-	/*
-	 * public Device(String type, long id, SimState state) {
-	 * 
-	 * simState = state; this.agentType = type; this.agentID = id; userAgent =
-	 * new MyAgent(this); co = new Coroutine(this); UrbanSim urbansim =
-	 * (UrbanSim) simState; urbansim.connected.addNode(this);
-	 * 
-	 * }
-	 */
+	private void processSendBuffer() {
+		List<Message> toRemove = new ArrayList<Message>();
+		synchronized (sendBuffer) {
+			synchronized (ammountSent) {
+				for (Message m : sendBuffer) {
+					Device dst = (Device) m.dst;
+					// Check that the recvr is still in range and calculate
+					// bandwidth
+					if (inRange(dst) && connectedTo(dst)) {
+						int bitsSent =sendTime(dst, m); 
+						if(bitsSent == -1 ){
+							//The message has been sent remove it 
+							System.out.println("Sent the message");
+							toRemove.add(m);
+						}else{
+							//The message has not been sent leave it in the buffer
+							ammountSent.put(m,bitsSent);
+							System.out.println("Unable to send message");
+						}
+					} else {
+						toRemove.add(m);
+					}
+				}
+				for(Message m:toRemove){
+					sendBuffer.remove(m);
+					ammountSent.remove(m);
+				}
+				
+				
+			}
+		}
 
-	private void recalculateSendTime(){
-		
-		
 	}
 	
 	
@@ -177,6 +200,7 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 				if (co.getState() != Coroutine.State.RUNNING
 						&& co.getState() != Coroutine.State.FINISHED) {
 					battery.startTimer(); 
+					processSendBuffer();
 					do {
 						double startTime = agentTime;
 						co.run();
@@ -352,7 +376,21 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 		}
 	}
 
-	public void removeConnection(Device b) {
+	public boolean sendingMessageTo(Device d) {
+		synchronized (sendBuffer) {
+			for (Message m : sendBuffer) {
+				if (m.dst == d) {
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+	
+	
+	
+	public boolean removeConnection(Device b) {
+		
 		Edge toRemove = findEdge(b);
 		if (toRemove != null) {
 			connection.lock();
@@ -367,7 +405,13 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 			} finally {
 				connection.unlock();
 			}
+			//removed the connection
+			return true;
 		}
+		return false;
+		
+		
+		
 	}
 
 	private void resetConnections() {
@@ -469,7 +513,40 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 		}
 
 	}
+	//returns true if sent, false if in buffer.
+	private int sendTime(Device dst, Message msg) {
+		synchronized (sendBuffer) {
+			synchronized (ammountSent) {
+				// calculate distance
+				Double distance = currentPosition().distance(
+						dst.currentPosition());
+				// Time to send a message
+				double timeToSend = wirelessInterface.timeToSend(distance,
+						msg.size);
 
+				// TODO
+				if (agentTime + timeToSend > startTime + stepTime) {
+					// The devices could move closer or further apart causing
+					// bitrate to
+					// change
+					int timeRemaning = (int) ((startTime + stepTime) - agentTime);
+					int bitsSent = wirelessInterface.bitsSent(distance,
+							timeRemaning);
+					// Add the message to the send buffer
+					return bitsSent;
+				} else {
+					// The message will be completely sent in this interval
+					msg.recvtime = agentTime + timeToSend;
+					// give the message to the other device
+					dst.receive(msg);
+					// remove the msg from send buffers if exists.
+					return -1;
+				}
+			}
+		}
+
+	}
+	
 	private void sendMessage(DeviceInterface a, Message msg) {
 		Device dst = (Device) a;
 		// System.out.println("Send To!");
@@ -481,18 +558,22 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 			// System.out.println("Agent Time " +
 			// Double.toString(msg.sendtime));
 
-			// calculate distance
-			Double distance = currentPosition().distance(dst.currentPosition());
-			// Time to send a message
-			agentTime += wirelessInterface.timeToSend(distance, msg.size);
-			
+			int sentbits = sendTime(dst,msg); 
+			if(sentbits == -1){
+				sendBuffer.remove(msg);
+				ammountSent.remove(msg);
+			}else{
+				System.out.println("Could not send the message in this step");
+				sendBuffer.add(msg);
+				ammountSent.put(msg,sentbits);
+			}
 			/*
 			 * System.out.println("Transmit Time " +
 			 * Double.toString(wirelessInterface.timeToSend(distance,
 			 * msg.size)));
 			 */
-			// time the message should be received
-			msg.recvtime = agentTime;
+			
+			
 
 			// System.out.println("Recv Time " + Double.toString(msg.recvtime));
 
@@ -501,8 +582,7 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 				logSent.add(msg);
 			}
 
-			// give the message to the other device
-			dst.receive(msg);
+			
 
 		} else {
 			// Error sending message
@@ -591,10 +671,18 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 	}
 
 	@Override
-	public void disconnect(DeviceInterface d) {
-		removeConnection((Device) d);
-		// This is a kind disconnect
-		((Device) d).removeConnection(this);
+	public boolean disconnect(DeviceInterface d) {
+		if(!sendingMessageTo((Device )d)){
+			//Can only disconnect if not sending messages.
+			removeConnection((Device) d);
+			// This is a kind disconnect
+			((Device) d).removeConnection(this);
+			return true;
+		}else{
+			return false;
+		}
+		
+		
 	}
 
 	private List<DeviceInterface> activeCon() {
