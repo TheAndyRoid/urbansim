@@ -31,6 +31,7 @@ import urbansim.p2p.DeviceAgent;
 import urbansim.physical.Battery;
 import urbansim.physical.DeviceInterface;
 import urbansim.physical.PhysicalComponent;
+import urbansim.physical.Sent;
 import urbansim.physical.WirelessConnection;
 
 public class Device extends ToXML implements Steppable, PhysicalComponent,
@@ -46,7 +47,7 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 	private long agentID;
 	private SimState simState;
 	private DeviceAgent userAgent;
-	private WirelessConnection wirelessInterface;
+	public WirelessConnection wirelessInterface;
 	private Battery battery;
 	
 	private int stepTime = 1000;
@@ -91,17 +92,18 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 					// Check that the recvr is still in range and calculate
 					// bandwidth
 					if (inRange(dst) && connectedTo(dst)) {
-						int bitsSent =sendTime(dst, m); 
-						if(bitsSent == -1 ){
-							//The message has been sent remove it 
-							System.out.println("Sent the message");
+						int toSend = m.size - ammountSent.get(m);
+						int bitsSent =sendTime(dst, m, toSend); 
+						if(m.size <= toSend+bitsSent ){
+							//The message has been sent remove it
 							toRemove.add(m);
 						}else{
-							//The message has not been sent leave it in the buffer
-							ammountSent.put(m,bitsSent);
-							System.out.println("Unable to send message");
+							//The message has not been sent leave it in the buffer and update the number of bits sent
+							ammountSent.put(m,(bitsSent + ammountSent.get(m)));
 						}
+						System.out.println(ammountSent.get(m)+ " of " +m.size+ " Sent");
 					} else {
+						//We are no longer connected or out of range.
 						toRemove.add(m);
 					}
 				}
@@ -187,6 +189,8 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 			//calculate cpu idle time and drain battery
 			battery.calculateSleepDrain(startTime - agentTime);
 			agentTime = startTime;
+			//Reset connection bandwidth
+			wirelessInterface.resetBandwidth();
 		}
 	}
 
@@ -513,44 +517,68 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 		}
 
 	}
-	//returns true if sent, false if in buffer.
-	private int sendTime(Device dst, Message msg) {
+	//returns -1 if message was sent otherwise the number of bits that were sent
+	private int sendTime(Device dst, Message msg, int bitsToSend) {
 		synchronized (sendBuffer) {
 			synchronized (ammountSent) {
 				// calculate distance
 				Double distance = currentPosition().distance(
 						dst.currentPosition());
-				// Time to send a message
-				double timeToSend = wirelessInterface.timeToSend(distance,
-						msg.size);
-
-				// TODO
-				if (agentTime + timeToSend > startTime + stepTime) {
+				// Time bits
+				int sendTime = wirelessInterface.timeToSend(distance,
+						bitsToSend);
+				 if (agentTime + sendTime > startTime + stepTime) {
 					// The devices could move closer or further apart causing
-					// bitrate to
-					// change
+					// bitrate to change, send what we can. 
+					
 					int timeRemaning = (int) ((startTime + stepTime) - agentTime);
-					int bitsSent = wirelessInterface.bitsSent(distance,
+					int maxbitsSent = wirelessInterface.bitsSent(distance,
 							timeRemaning);
-					// Add the message to the send buffer
-					return bitsSent;
+					int actualBitsSent = getBandwidth(dst,maxbitsSent);
+					// return the actual number of bits sent.
+					//System.out.println("ActualBitsSent "+ actualBitsSent);
+					return actualBitsSent;
 				} else {
-					// The message will be completely sent in this interval
-					msg.recvtime = agentTime + timeToSend;
-					// give the message to the other device
+					// The message could be completely sent in this interval
+					int actualBitsSent = getBandwidth(dst,bitsToSend);
+					
+						msg.recvtime = agentTime + sendTime;
+						// give the message to the other device
 					dst.receive(msg);
-					// remove the msg from send buffers if exists.
-					return -1;
-				}
+						// remove the msg from send buffers if exists.
+						
+					return actualBitsSent;
+					
+				}	
 			}
 		}
 
 	}
 	
+	
+	private int getBandwidth(Device dst,int bits){
+		synchronized(wirelessInterface){
+		int local = wirelessInterface.requestBandwidth(bits);
+		int remote = dst.wirelessInterface.requestBandwidth(bits);
+		if(local > remote){
+			dst.wirelessInterface.commitBandwidth(remote);
+			wirelessInterface.commitBandwidth(remote);
+			return remote;
+		}else{
+			dst.wirelessInterface.commitBandwidth(local);
+			wirelessInterface.commitBandwidth(local);
+			return local;
+		}
+		}
+	}
+	
+
+	
+	
 	private void sendMessage(DeviceInterface a, Message msg) {
 		Device dst = (Device) a;
 		// System.out.println("Send To!");
-		if (msg != null && inRange(dst) && connectedTo(dst)) {
+		if (msg != null && inRange(dst) && connectedTo(dst) && !sendingMessageTo(dst)) {
 
 			// Time the message was sent
 			msg.sendtime = agentTime;
@@ -558,8 +586,9 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 			// System.out.println("Agent Time " +
 			// Double.toString(msg.sendtime));
 
-			int sentbits = sendTime(dst,msg); 
-			if(sentbits == -1){
+			int sentbits = sendTime(dst,msg,msg.size); 
+			if(sentbits == msg.size){
+				//Message was sent
 				sendBuffer.remove(msg);
 				ammountSent.remove(msg);
 			}else{
@@ -567,11 +596,8 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 				sendBuffer.add(msg);
 				ammountSent.put(msg,sentbits);
 			}
-			/*
-			 * System.out.println("Transmit Time " +
-			 * Double.toString(wirelessInterface.timeToSend(distance,
-			 * msg.size)));
-			 */
+			System.out.println(sentbits + " of " +msg.size+ " Sent");
+		
 			
 			
 

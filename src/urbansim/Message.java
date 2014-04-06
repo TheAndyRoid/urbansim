@@ -21,7 +21,7 @@ public class Message extends ToXML implements Comparable<Message> {
 	public DeviceInterface src;
 	public DeviceInterface dst;
 	public Object obj;
-	public int size;
+	final public int size;
 	public double sendtime = 0;
 	public double recvtime = 0;
 	public boolean isSender;

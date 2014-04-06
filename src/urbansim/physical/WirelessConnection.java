@@ -30,9 +30,53 @@ public class WirelessConnection extends ToXML{
 	private double maxRange;
 	private int handshake;
 	private TreeMap<Double,Integer> distanceToBitrate = new TreeMap<Double,Integer>();
+	//Maximum bandwidth that this device can serve
+	private int maxBandwidth = 6000;
+	private int avalibleBandwidth;
 	
 	
 	
+	public int getMaxBandwidth(){
+		return maxBandwidth;		
+	}
+	
+	public int getAvalibleBandwidth(){
+		return avalibleBandwidth;
+	}
+	
+	public void resetBandwidth(){
+		avalibleBandwidth = maxBandwidth;
+	}
+	
+	
+	
+	public void commitBandwidth(int bandwidth){
+		avalibleBandwidth -= requestBandwidth(bandwidth);
+	}
+	
+	
+	public int requestBandwidth(int bandwidth){
+		
+		int result;
+		//System.out.println("Avalible " + avalibleBandwidth);
+		//System.out.println("Requested " + bandwidth);
+		if(avalibleBandwidth - bandwidth > 0){
+			//full amount is avalible			
+			result = bandwidth;			
+		}else{
+			//return what ever is left.
+			result = avalibleBandwidth;
+		}
+		
+		return result;
+		
+	}
+	
+	
+	public int bitsSent(double distance, long time){
+		return (int) Math.floor(
+				bitrateAtDistance(distance)*(double)time/1000);
+	}
 	
 	
 	public WirelessConnection(File file){
@@ -98,6 +142,11 @@ public class WirelessConnection extends ToXML{
 			e.printStackTrace();
 		}
 		
+		
+		
+		avalibleBandwidth = maxBandwidth;
+		
+		
 	}
 	
 	// get the name of this interface type
@@ -140,14 +189,10 @@ public class WirelessConnection extends ToXML{
 	
 	 //Calculate the time to send x bits a distance m returns milliseconds
 	public int timeToSend(double distance, int bits){
-		return (int)Math.ceil((double)bits/bitrateAtDistance(distance));
+		return (int)Math.ceil((double)bits/bitrateAtDistance(distance))*1000;	
 	} 
 	
-	public int bitsSent(double distance, long time){
-		return (int) Math.floor(
-				bitrateAtDistance(Math.ceil(distance))
-				*time);
-	}
+
 	
 	//Check if a devices is compatable with this one.
 	public boolean isCompatible(WirelessConnection other){

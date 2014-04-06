@@ -42,22 +42,20 @@ public class MyAgent implements DeviceAgent {
 				Flood flood = new Flood(floodTTL, "busStop@flood@20");
 				// send to everyone we can.
 				for(DeviceInterface d:device.activeConnections()){
-					Message msg = new Message(device, flood, d, 2000);
+					Message msg = new Message(device, flood, d, 1000);
 					device.sendTo(d, msg);
 					//System.out.println("Send Message");
 				}
 			} else {
 				// System.out.println("Not Source");
 				Message rcv = device.recv();
-				while(rcv != null) {
-
-					
+				while(rcv != null) {					
 					if (((Flood) rcv.obj).target.equals(device.getName())) {
 						// hack exit
 						System.out.println("Message            Recived");
 						//System.out.println("Message            Recived");
 						//System.out.println("Message            Recived");
-						//System.exit(0);
+						System.exit(0);
 					} else {
 												
 						Flood recvd = (Flood) rcv.obj;
@@ -72,7 +70,7 @@ public class MyAgent implements DeviceAgent {
 							for (DeviceInterface d : inRange) {
 								if (d != rcv.src) {
 									//System.out.println("Forwarded");
-									Message msg = new Message(device, tmp, d, 0);
+									Message msg = new Message(device, tmp, d, rcv.size);
 									device.sendTo(d, msg);
 									device.sleep();
 								}
