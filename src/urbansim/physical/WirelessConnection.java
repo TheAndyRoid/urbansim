@@ -31,7 +31,7 @@ public class WirelessConnection extends ToXML{
 	private int handshake;
 	private TreeMap<Double,Integer> distanceToBitrate = new TreeMap<Double,Integer>();
 	//Maximum bandwidth that this device can serve
-	private int maxBandwidth = 6000;
+	private int maxBandwidth ;
 	private int avalibleBandwidth;
 	
 	
@@ -99,7 +99,8 @@ public class WirelessConnection extends ToXML{
 		drainRate = Utils.readAttributeDouble("mahs",Utils.getChildElement("drain",root));
 		scanRate = Utils.readAttributeDouble("mahs",Utils.getChildElement("scanDrain",root));
 		scanTime = Utils.readAttributeInt("ms",Utils.getChildElement("scanTime",root));
-		
+		maxBandwidth = Utils.readAttributeInt("kbps",Utils.getChildElement("bandwidth",root));
+		avalibleBandwidth = maxBandwidth;	
 		
 		
 		Element B = Utils.getChildElement("bitrateAtDistance",root);
@@ -134,6 +135,7 @@ public class WirelessConnection extends ToXML{
 			}
 		}
 		
+		
 		//System.out.println(compatibleWith);
 		
 		handshake = Utils.readAttributeInt("ms",Utils.getChildElement("handshake",root));
@@ -144,7 +146,7 @@ public class WirelessConnection extends ToXML{
 		
 		
 		
-		avalibleBandwidth = maxBandwidth;
+		
 		
 		
 	}
@@ -230,6 +232,8 @@ public class WirelessConnection extends ToXML{
 		Element einterface = doc.createElement("interface");
 		root.appendChild(einterface);
 		einterface.setAttribute("type", type);
+		einterface.setAttribute("maxBandwidth", Integer.toString(maxBandwidth));
+		einterface.setAttribute("avalibleBandwidth", Integer.toString(avalibleBandwidth));
 		return einterface;
 	}
 	

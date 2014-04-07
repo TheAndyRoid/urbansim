@@ -18,4 +18,5 @@ public interface DeviceInterface {
 	public boolean connect(DeviceInterface d) throws SuspendExecution;
 	public boolean disconnect(DeviceInterface d);
 	public List<DeviceInterface> activeConnections() throws SuspendExecution;
+	public LongTermStorage getStorage(); 
 }

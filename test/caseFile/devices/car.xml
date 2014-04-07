@@ -6,5 +6,6 @@
   <cpusleepdrain mahs="5"/>    
   <cpudrain mahs="1"/>   
   <sumoType type="car"/>
+  <storage type="unlimited"/> 
 </car>
 

@@ -4,6 +4,7 @@
   <interface type='wifi'/>
   <battery type='unlimited'/>
   <cpusleepdrain mahs="5"/>    
-  <cpudrain mahs="5"/>   
+  <cpudrain mahs="5"/> 
+  <storage type="unlimited"/>    
 </busStop>
 

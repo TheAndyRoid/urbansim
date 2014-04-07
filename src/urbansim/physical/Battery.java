@@ -12,9 +12,10 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
+import urbansim.ToXML;
 import urbansim.Utils;
 
-public class Battery {
+public class Battery extends ToXML{
 
 	private int maxcapacity;
 	private double capacityremaining;
@@ -120,6 +121,27 @@ public class Battery {
 		} else {
 			return capacityremaining / maxcapacity;
 		}
+	}
+	
+	@Override
+	public Element toXML(Element root, Document doc) {
+		Element ebattery = doc.createElement("battery");
+		root.appendChild(ebattery);
+		// create agent element
+
+		
+		ebattery.setAttribute("maxcapacity", Long.toString(maxcapacity));
+		if (maxcapacity == -1) {
+			// This has unlimited power.
+			return ebattery;
+
+		}else{
+			ebattery.setAttribute("capacityremaining", Double.toString(capacityremaining));
+
+			return ebattery;
+		}
+		
+		
 	}
 
 }

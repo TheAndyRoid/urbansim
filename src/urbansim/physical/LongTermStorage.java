@@ -26,21 +26,38 @@ import urbansim.ToXML;
 import urbansim.Utils;
 
 
-public class LongTermStorage {
-	long maxSize;
-	long currentSize;
+public class LongTermStorage extends ToXML{
+	private long maxSize;
+	private long currentSize;
 	TreeSet <Message> storage = new TreeSet<Message>();
 	
 	//Read in config settings.
-	public LongTermStorage(File file){		
-		
+	public LongTermStorage(File file){	
+		try {
+
+			DocumentBuilderFactory dbFactory = DocumentBuilderFactory
+					.newInstance();
+			DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
+			Document doc = dBuilder.parse(file);
+
+			doc.getDocumentElement().normalize();
+
+			Element root = doc.getDocumentElement();
+
+			Element capacitymax = Utils.getChildElement("maxcapacity", root);
+			maxSize = Utils.readAttributeInt("bits", capacitymax);
+			currentSize = maxSize;		
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 	}
 	
 	
 	
 	public boolean add(Message msg){
 		//Check that we have the storage space
-		if(hasSpace(msg.size)){
+		if(hasSpaceFor(msg.size)){
 			currentSize+= msg.size;
 
 			storage.add(msg);		
@@ -68,7 +85,7 @@ public class LongTermStorage {
 		storage.remove(getYoungest());
 	}
 	//true has space false not.
-	public boolean hasSpace(int size){
+	public boolean hasSpaceFor(int size){
 	 if(maxSize>currentSize+size){
 		return true; 
 	 }else{
@@ -78,8 +95,18 @@ public class LongTermStorage {
 	public long maxSize(){
 		return maxSize;
 	}
-	
-	
+
+
+	@Override
+	public Element toXML(Element root, Document doc) {
+		// create agent element
+		Element estorage = doc.createElement("storage");
+		root.appendChild(estorage);
+		estorage.setAttribute("maxSize", Long.toString(maxSize));
+		estorage.setAttribute("currentSize", Long.toString(currentSize));
+		estorage.setAttribute("freeSpace", Long.toString(maxSize - currentSize));
+		return estorage;
+	}
 	
 	
 	

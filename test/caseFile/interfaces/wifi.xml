@@ -17,6 +17,7 @@
   </bitrateAtDistance>
   <scanTime ms='200'/>
   <drain mahs='0.8'/>
+  <bandwidth kbps="6000"/>
   <scanDrain mahs='0.5'/>
 </wifi>
 

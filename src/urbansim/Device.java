@@ -30,8 +30,8 @@ import sim.field.network.Edge;
 import urbansim.p2p.DeviceAgent;
 import urbansim.physical.Battery;
 import urbansim.physical.DeviceInterface;
+import urbansim.physical.LongTermStorage;
 import urbansim.physical.PhysicalComponent;
-import urbansim.physical.Sent;
 import urbansim.physical.WirelessConnection;
 
 public class Device extends ToXML implements Steppable, PhysicalComponent,
@@ -40,14 +40,18 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 	public PhysicalComponent phy;
 	public Vehicle v;
 	private Double2D positionActual; // actual
+	
 	private String deviceType;
 	private String agentType;
 	private String interfaceType;
 	private String batteryType;
+	private String storageType;
+	
 	private long agentID;
 	private SimState simState;
 	private DeviceAgent userAgent;
 	public WirelessConnection wirelessInterface;
+	public LongTermStorage storage;
 	private Battery battery;
 	
 	private int stepTime = 1000;
@@ -123,8 +127,18 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 	// Load static device
 	public Device(Element agentElement, Long id, SimState state,
 			File deviceType, Map<String, File> agentTypes,
-			Map<String, File> interfaceTypes,Map<String, File> agentData,Map<String, File> batteryTypes) {
-		this(id, state, deviceType, agentTypes, interfaceTypes,agentData,batteryTypes);
+			Map<String, File> interfaceTypes,
+			Map<String, File> agentData,
+			Map<String, File> batteryTypes,
+			Map<String, File> storageTypes) {
+		this(
+			id, 
+			state, deviceType, 
+			agentTypes, 
+			interfaceTypes,
+			agentData,
+			batteryTypes,
+			storageTypes);
 		// Load the position
 		Element ePos = (Element) agentElement.getElementsByTagName("position")
 				.item(0);
@@ -133,12 +147,16 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 
 	// Load from sumo
 	public Device(Long id, SimState state, File deviceType,
-			Map<String, File> agentTypes, Map<String, File> interfaceTypes,Map<String, File> agentData,Map<String, File> batteryTypes) {
+			Map<String, File> agentTypes, 
+			Map<String, File> interfaceTypes,
+			Map<String, File> agentData,
+			Map<String, File> batteryTypes,
+			Map<String, File> storageTypes) {
 		agentID = id;
 		simState = state;
 
 		// Read agent and interface in.
-		readAgent(deviceType, agentTypes, interfaceTypes,agentData,batteryTypes);
+		readAgent(deviceType, agentTypes, interfaceTypes,agentData,batteryTypes,storageTypes);
 
 		co = new Coroutine(this);
 
@@ -232,12 +250,17 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 	
 	
 	// read from file
-	public void readAgent(File deviceType, Map<String, File> agentTypes,
-			Map<String, File> interfaceTypes,Map<String, File> agentData,Map<String, File> batteryTypes) {
+	public void readAgent(File deviceType, 
+			Map<String, File> agentTypes,
+			Map<String, File> interfaceTypes,
+			Map<String, File> agentData,
+			Map<String, File> batteryTypes,
+			Map<String, File> storageTypes) {
 		// agentID = Utils.readAttributeLong("id", eAgent);
 		File agent = null;
 		File deviceInterface = null;
 		File deviceBattery = null;
+		File storageFile = null;
 		
 		Double cpusleepDrain = 0.0;
 		Double cpuDrain = 0.0;
@@ -272,6 +295,14 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 			Element b = Utils.getChildElement("battery", doc.getDocumentElement());
 			batteryType = Utils.readAttributeString("type",b);
 			deviceBattery = batteryTypes.get(batteryType);
+			
+			
+			
+			// Read the storage Type
+			Element s = Utils.getChildElement("storage", doc.getDocumentElement());
+			storageType = Utils.readAttributeString("type",s);
+			storageFile = storageTypes.get(storageType);
+			
 			
 			cpusleepDrain = Utils.readAttributeDouble("mahs",Utils.getChildElement("cpusleepdrain", doc.getDocumentElement()));
 			cpuDrain = Utils.readAttributeDouble("mahs",Utils.getChildElement("cpudrain", doc.getDocumentElement()));
@@ -321,6 +352,11 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 			e.printStackTrace();
 		}
 
+		
+		//Create storage
+		
+		storage = new LongTermStorage(storageFile);
+		
 		// Create Interface
 
 		wirelessInterface = new WirelessConnection(deviceInterface);
@@ -332,6 +368,8 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 						wirelessInterface.getScanDrain(),
 						wirelessInterface.getDrain());
 
+		//
+		
 		// System.out.println(wirelessInterface.connectionTime());
 
 	}
@@ -748,6 +786,12 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 		position.setAttribute("x", Double.toString(currentPosition().getX()));
 		position.setAttribute("y", Double.toString(currentPosition().getY()));
 
+		
+		//Log battery
+		battery.toXML(agentElement,doc);
+		wirelessInterface.toXML(agentElement,doc);
+		
+		
 		agentElement.appendChild(position);
 
 		Element elogSent = doc.createElement("Sent");
@@ -795,4 +839,13 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 	public boolean hasPower(){
 		return battery.hasPower();
 	}
+
+	@Override
+	public LongTermStorage getStorage() {
+		return storage;
+	}
+	
+	
+	
+	
 }

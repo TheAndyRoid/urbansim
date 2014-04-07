@@ -62,12 +62,14 @@ public class UrbanSim extends SimState implements VehicleLifecycleObserver,
 	private String interfaceTypeDir;
 	private String agentDataDir;
 	private String batteryTypeDir;
+	private String storageTypeDir;
 	
 	private Map<String,File> agentTypes = new HashMap<String,File>();
 	private Map<String,File> deviceTypes= new HashMap<String,File>();
 	private Map<String,File> interfaceTypes = new HashMap<String,File>();
 	private Map<String,File> agentData = new HashMap<String,File>();
 	private Map<String,File> batteryTypes = new HashMap<String,File>();
+	private Map<String,File> storageTypes = new HashMap<String,File>();
 	
 	private Map<String,Long> id = new HashMap<String,Long>();
 	
@@ -172,7 +174,8 @@ public class UrbanSim extends SimState implements VehicleLifecycleObserver,
 								agentTypes,
 								interfaceTypes,
 								agentData,
-								batteryTypes);
+								batteryTypes,
+								storageTypes);
 		
 		// Create new agent
 				//Device tmp = new Device("mobile",nextAgentID,this);
@@ -251,7 +254,8 @@ public class UrbanSim extends SimState implements VehicleLifecycleObserver,
 											agentTypes,
 											interfaceTypes,
 											agentData,
-											batteryTypes);
+											batteryTypes,
+											storageTypes);
 					
 					// Add agent to static agent list
 					stationaryAgents.add(tmp);
@@ -315,6 +319,7 @@ public class UrbanSim extends SimState implements VehicleLifecycleObserver,
 			interfaceTypeDir = caseDir +"/" +Utils.readElementString("interfaceDir",root);
 			agentDataDir = caseDir +"/" +Utils.readElementString("agentDataDir",root);
 			batteryTypeDir = caseDir +"/" +Utils.readElementString("batteryDir",root);
+			storageTypeDir = caseDir +"/" +Utils.readElementString("storageDir",root);
 			
 			//Read agent types
 			readTypes(agentTypes,agentTypeDir);	
@@ -326,6 +331,8 @@ public class UrbanSim extends SimState implements VehicleLifecycleObserver,
 			readTypes(agentData,agentDataDir);
 			//Read battery
 			readTypes(batteryTypes,batteryTypeDir);
+			//Read storage
+			readTypes(storageTypes,storageTypeDir);
 			
 			
 			
