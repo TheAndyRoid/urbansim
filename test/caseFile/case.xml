@@ -12,5 +12,5 @@
   <batteryDir>battery</batteryDir>
   <storageDir>storage</storageDir>
   <simulationDurationSeconds>50000</simulationDurationSeconds>
-  <deltasPerFile>1</deltasPerFile>
+  <deltasPerFile>300</deltasPerFile>
 </simulation>

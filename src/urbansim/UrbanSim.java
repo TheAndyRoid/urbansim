@@ -144,7 +144,7 @@ public class UrbanSim extends SimState implements VehicleLifecycleObserver,
 					.size()]);
 
 			// create parallel for faster processing
-			urbansim.SAgents = new ParallelSequence(agents, 64);
+			urbansim.SAgents = new ParallelSequence(agents, 12);
 
 			// Step Agents
 			urbansim.schedule.scheduleOnce(urbansim.SAgents);

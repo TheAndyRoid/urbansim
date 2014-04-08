@@ -59,7 +59,13 @@ public class UrbanSimWithUI extends GUIState {
 		UrbanSim urbanSim = (UrbanSim) state;
 		// Setup what and how to portray agents
 		agentPortrayal.setField(urbanSim.agentPos);
-		agentPortrayal.setPortrayalForAll(new OvalPortrayal2D(8));
+		agentPortrayal.setPortrayalForAll(new SimplePortrayal2D(){
+			public void draw(Object object, Graphics2D graphics, DrawInfo2D info){
+				Device d = (Device)object;
+				//Draw the device specific portrayal
+				d.getPortrayal().draw(object, graphics, info);			
+			}		
+			});
 		
 		
 		networkPortrayal.setField( new SpatialNetwork2D( urbanSim.agentPos, urbanSim.connected ) );

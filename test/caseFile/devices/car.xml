@@ -7,5 +7,8 @@
   <cpudrain mahs="1"/>   
   <sumoType type="car"/>
   <storage type="unlimited"/> 
+    <portrayal shape="circle" scale="7">
+    <colour r="255" g="0" b="0"/>   
+  </portrayal>
 </car>
 

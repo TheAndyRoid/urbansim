@@ -55,7 +55,7 @@ public class MyAgent implements DeviceAgent {
 						System.out.println("Message            Recived");
 						//System.out.println("Message            Recived");
 						//System.out.println("Message            Recived");
-						System.exit(0);
+						//System.exit(0);
 					} else {
 												
 						Flood recvd = (Flood) rcv.obj;

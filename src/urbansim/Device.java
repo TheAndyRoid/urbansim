@@ -1,9 +1,11 @@
 package urbansim;
 
+import java.awt.Color;
 import java.awt.geom.Point2D;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -24,6 +26,9 @@ import de.matthiasmann.continuations.*;
 import it.polito.appeal.traci.StepAdvanceListener;
 import it.polito.appeal.traci.Vehicle;
 import sim.engine.*;
+import sim.portrayal.SimplePortrayal2D;
+import sim.portrayal.simple.OvalPortrayal2D;
+import sim.portrayal.simple.RectanglePortrayal2D;
 import sim.util.*;
 import sim.field.continuous.*;
 import sim.field.network.Edge;
@@ -66,6 +71,10 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 
 	private int sleepTime = 0;
 
+	private SimplePortrayal2D portrayal;
+	private Color colour;
+	
+	
 	// java-continuation
 	private Coroutine co;
 
@@ -177,6 +186,10 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 		// Add the device to the connected network
 		UrbanSim urbansim = (UrbanSim) simState;
 		urbansim.connected.addNode(this);
+		
+		
+		
+		
 	}
 
 	public String getAgentType() {
@@ -205,6 +218,39 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 		return positionActual;
 	}
 
+	public Color getColour(){
+		return colour;		
+	}
+	public SimplePortrayal2D getPortrayal(){
+		//Reflection to set paint colour and fill.
+		try {
+			Field field = portrayal.getClass().getDeclaredField("paint");
+			field.set(portrayal,getColour());
+			if(hasPower() == false){
+				field = portrayal.getClass().getDeclaredField("filled");
+				field.set(portrayal,false);			
+			}
+			
+			
+			
+		} catch (IllegalArgumentException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IllegalAccessException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (NoSuchFieldException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (SecurityException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+		return portrayal;
+	}
+	
+	
 	/*
 	 * Set the device to the supplied position and update the ui.
 	 */
@@ -339,6 +385,9 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 			deviceBattery = batteryTypes.get(batteryType);
 			
 			
+			//Read in portrayal inf
+			Element p = Utils.getChildElement("portrayal", doc.getDocumentElement());
+			readPortrayal(p);
 			
 			// Read the storage Type
 			Element s = Utils.getChildElement("storage", doc.getDocumentElement());
@@ -414,6 +463,24 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 
 	}
 
+	private void readPortrayal(Element root){
+		
+		String shape = Utils.readAttributeString("shape",root);
+		int scale = Utils.readAttributeInt("scale",root);
+		if(shape.equals("circle")){
+			portrayal = new OvalPortrayal2D(scale);
+		}else if(shape.equals("rectangle")){
+			portrayal = new RectanglePortrayal2D(scale);
+		}
+		
+		Element c = Utils.getChildElement("colour",root);
+		int r = Utils.readAttributeInt("r",c);
+		int g = Utils.readAttributeInt("g",c);
+		int b = Utils.readAttributeInt("b",c);
+		colour = new Color(r,g,b);	
+	}
+	
+	
 	
 	/*
 	 * Adds a connection to the other device

@@ -6,5 +6,8 @@
   <cpusleepdrain mahs="5"/>    
   <cpudrain mahs="5"/> 
   <storage type="unlimited"/>    
+  <portrayal shape="rectangle" scale="8">
+    <colour r="0" g="128" b="0"/>   
+  </portrayal>
 </busStop>
 
