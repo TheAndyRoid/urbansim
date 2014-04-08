@@ -81,12 +81,21 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 
 	private List<Edge> activeConnections = new ArrayList<Edge>();
 
+	/*
+	 * Checks that this devices still has time left otherwise it pauses execution of the agent.
+	 */
 	private void checkGotTime() throws SuspendExecution {
 		if (agentTime > startTime + stepTime) {
 			Coroutine.yield();
 		}
 	}
 
+	
+	/*
+	 * Attempts to send messages that are send buffer. 
+	 * Checks that receiving devices are in range and that a connection to the still exists.
+	 * Once the message is sent they are removed from the send buffer.
+	 */
 	private void processSendBuffer() {
 		List<Message> toRemove = new ArrayList<Message>();
 		synchronized (sendBuffer) {
@@ -124,7 +133,10 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 	
 	
 	
-	// Load static device
+	/*
+	 * Constructor used when an agent has a fixed position
+	 * Calls sumo constructor and then sets the devices position.
+	 */
 	public Device(Element agentElement, Long id, SimState state,
 			File deviceType, Map<String, File> agentTypes,
 			Map<String, File> interfaceTypes,
@@ -145,7 +157,9 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 		setPosition(state, Utils.readAttributeDouble2D(ePos));
 	}
 
-	// Load from sumo
+	/*
+	 * Constructor used when the agent position will be updated later.
+	 */
 	public Device(Long id, SimState state, File deviceType,
 			Map<String, File> agentTypes, 
 			Map<String, File> interfaceTypes,
@@ -177,21 +191,23 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 		return agentID;
 	}
 
+	/*
+	 * Returns the unique name for this device.
+	 * 
+	 */
 	public String getName() {
 		String tmp = new String(deviceType + "@" + agentType + "@" + agentID);
 		// System.out.println(tmp);
 		return tmp;
 	}
 
-	public Device(SimState state, Double2D position) {
-		UrbanSim urbansim = (UrbanSim) state;
-		setPosition(state, position);
-	}
-
 	public Double2D currentPosition() {
 		return positionActual;
 	}
 
+	/*
+	 * Set the device to the supplied position and update the ui.
+	 */
 	public void setPosition(SimState state, Double2D newPosition) {
 		positionActual = newPosition;
 		UrbanSim urbansim = (UrbanSim) state;
@@ -200,21 +216,44 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 
 	}
 
-	private void time() {
+	/*
+	 * Sets the agent to the beginning of the simulation step if it's time is less
+	 */
+	private void updateTime() {
+		// get time
+		startTime = simState.schedule.getTime() * stepTime;
+		if (agentTime < startTime) {			
+			agentTime = startTime;			
+		}
+	}
+	/*
+	 * Updates battery drain and resets bandwidth.
+	 */
+	private void updateConsumables() {
 		// get time
 		startTime = simState.schedule.getTime() * stepTime;
 		if (agentTime < startTime) {
-			//calculate cpu idle time and drain battery
+			// calculate cpu idle time and drain battery
 			battery.calculateSleepDrain(startTime - agentTime);
-			agentTime = startTime;
-			//Reset connection bandwidth
+			// Reset connection bandwidth
 			wirelessInterface.resetBandwidth();
 		}
 	}
+	
+	
 
-	// Called by MASON
+	/*
+	 * This is the function that the simulation engine will call once per time step.
+	 * If the agent time is before this step the agent time is increased. If the agent time is after 
+	 * the agent is asleep or has used more processing time and must wait.
+	 * The battery power for the device is also checked to make sure that the device has battery
+	 * the main function is timed for battery drain (it is often so short that it's not measurable)
+	 */
 	public void step(SimState state) {
-		time();
+		//update battery and bandwidth
+		updateConsumables();
+		//update time
+		updateTime();
 		
 		if (agentTime < (startTime + stepTime) && battery.hasPower()) {
 			running.lock();
@@ -249,7 +288,10 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 	
 	
 	
-	// read from file
+	/*
+	 * Reads in configuration options from the input files.
+	 * Class specific data is passed to their corresponding constructors
+	 */
 	public void readAgent(File deviceType, 
 			Map<String, File> agentTypes,
 			Map<String, File> interfaceTypes,
@@ -367,19 +409,15 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 					cpusleepDrain,
 						wirelessInterface.getScanDrain(),
 						wirelessInterface.getDrain());
-
-		//
 		
 		// System.out.println(wirelessInterface.connectionTime());
 
 	}
 
-	private void connected(){
-		
-	}
 	
-	
-	
+	/*
+	 * Adds a connection to the other device
+	 */
 	private boolean addConnection(Device d) {
 		boolean result;
 		Edge e = new Edge(this, d, new Double(0));
@@ -409,7 +447,9 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 		}
 		return result;
 	}
-
+/*
+ * Returns true if there is a connection to the device otherwise false	
+ */
 	public boolean connectedTo(Device d) {
 		if (findEdge(d) != null) {
 			return true;
@@ -418,6 +458,9 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 		}
 	}
 
+	/*
+	 * returns true if there is a message being sent to the device otherwise false.
+	 */
 	public boolean sendingMessageTo(Device d) {
 		synchronized (sendBuffer) {
 			for (Message m : sendBuffer) {
@@ -430,7 +473,9 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 	}
 	
 	
-	
+	/*
+	 * Remove the device from the list of active connections on this device.
+	 */
 	public boolean removeConnection(Device b) {
 		
 		Edge toRemove = findEdge(b);
@@ -450,12 +495,13 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 			//removed the connection
 			return true;
 		}
-		return false;
-		
-		
-		
+		return false;		
 	}
 
+	/*
+	 * Resets all connections with this device. It also informs all devices that it was connected to 
+	 * 
+	 */
 	private void resetConnections() {
 		UrbanSim urbansim = (UrbanSim) simState;
 		connection.lock();
@@ -488,7 +534,7 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 		}
 	}
 	
-
+	
 	private Edge findEdge(Device b) {
 		Edge found = null;
 		UrbanSim urbansim = (UrbanSim) simState;
@@ -520,7 +566,11 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 		}
 	}
 
-	//
+	/*
+	*This function is called by a devices that is sending us a message. It is the responsibility of the
+	*other device to make sure that we can received the message, in range, bandwidth etc. This function will
+	*wake up the device if possible.
+	*/
 	private void receive(Message msg) {
 		UrbanSim urbansim = (UrbanSim) simState;
 		synchronized (recvBuffer) {
@@ -537,7 +587,7 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 		if (msg.recvtime < (startTime + stepTime)) {
 			if (running.tryLock()) {
 				try {
-					time();
+					updateTime();
 					if (agentTime < startTime + stepTime) {
 						if (co.getState() != Coroutine.State.RUNNING
 								&& co.getState() != Coroutine.State.FINISHED) {
@@ -555,7 +605,13 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 		}
 
 	}
-	//returns -1 if message was sent otherwise the number of bits that were sent
+	/*
+	 * This function calculates if the message can be sent this simulation cycle or the next because of 
+	 * limited bandwidth. It does not check if the devices are within range. 
+	 * 
+	 * If the message can be sent the receiving devices receive method is called and -1 returned
+	 * otherwise the number of bits sent is returned
+	 */
 	private int sendTime(Device dst, Message msg, int bitsToSend) {
 		synchronized (sendBuffer) {
 			synchronized (ammountSent) {
@@ -593,7 +649,10 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 
 	}
 	
-	
+	/* This requests bandwidth from both interfaces. The one with the least
+	 * bandwidth is the limiting factor,so only that amount of bandwidth is
+	 * committed to the connection on both devices.
+	 */
 	private int getBandwidth(Device dst,int bits){
 		synchronized(wirelessInterface){
 		int local = wirelessInterface.requestBandwidth(bits);
@@ -609,14 +668,16 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 		}
 		}
 	}
-	
-
-	
-	
+	/*
+	 * Checks that the receiving device is in range, an active connection exists, 
+	 * and that there is not already a message waiting in the send buffer.
+	 * 
+	 */
 	private void sendMessage(DeviceInterface a, Message msg) {
 		Device dst = (Device) a;
 		// System.out.println("Send To!");
-		if (msg != null && inRange(dst) && connectedTo(dst) && !sendingMessageTo(dst)) {
+		if (msg != null && inRange(dst) && connectedTo(dst)
+				&& !sendingMessageTo(dst)) {
 
 			// Time the message was sent
 			msg.sendtime = agentTime;
@@ -624,21 +685,17 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 			// System.out.println("Agent Time " +
 			// Double.toString(msg.sendtime));
 
-			int sentbits = sendTime(dst,msg,msg.size); 
-			if(sentbits == msg.size){
-				//Message was sent
+			int sentbits = sendTime(dst, msg, msg.size);
+			if (sentbits == msg.size) {
+				// Message was sent
 				sendBuffer.remove(msg);
 				ammountSent.remove(msg);
-			}else{
+			} else {
 				System.out.println("Could not send the message in this step");
 				sendBuffer.add(msg);
-				ammountSent.put(msg,sentbits);
+				ammountSent.put(msg, sentbits);
 			}
-			System.out.println(sentbits + " of " +msg.size+ " Sent");
-		
-			
-			
-
+			System.out.println(sentbits + " of " + msg.size + " Sent");
 			// System.out.println("Recv Time " + Double.toString(msg.recvtime));
 
 			// Log the message as sent.
@@ -646,15 +703,13 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 				logSent.add(msg);
 			}
 
-			
-
 		} else {
 			// Error sending message
 			agentTime += 20;
 		}
 	}
 
-	// Add message to send buffer
+	// Wrapper function for deviceInterface
 	public void sendTo(DeviceInterface a, Message msg) throws SuspendExecution {
 		// check that a connection exists
 		if (connectedTo((Device) msg.dst)) {
@@ -665,6 +720,14 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 		}
 	}
 
+	// Wrapper function for deviceInterface
+	public Message recv() throws SuspendExecution {
+		// time to receive a message
+		checkGotTime();
+		return getMessage(recvBuffer);
+	}
+	
+	//Gets a message out of the receive buffer only if the agent time is greater than the time the message was received.
 	public Message getMessage(Queue<Message> buffer) {
 		Message msg;
 		synchronized (recvBuffer) {
@@ -683,13 +746,7 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 		return msg;
 	}
 
-	// Get message from receive buffer or return null
-	public Message recv() throws SuspendExecution {
-		// time to receive a message
-		agentTime += 10;
-		checkGotTime();
-		return getMessage(recvBuffer);
-	}
+	
 
 	// This is for the hack cast I'm aware, its bad but needed
 	@SuppressWarnings("unchecked")
@@ -710,10 +767,18 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 		return wirelessInterface;
 	}
 
+	/*
+	 * Causes the agent to sleep at it current position of execution.Receiving a
+	 * new message will wake up the agent.
+	 */
 	public void sleep() throws SuspendExecution {
 		Coroutine.yield();
 	}
 
+	/*
+	 * Increases agentTime by the corresponding amount. Causes the agent to not
+	 * be runnable till after this time.
+	 */
 	public void sleep(int seconds) throws SuspendExecution {
 		agentTime += seconds * stepTime;
 		Coroutine.yield();
@@ -724,6 +789,10 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 		userAgent.main();
 	}
 
+	/*
+	 * Wrapper function that connects to another device.
+	 * 
+	 */
 	public boolean connect(DeviceInterface d) throws SuspendExecution {
 		agentTime += wirelessInterface.connectionTime();
 		checkGotTime();
@@ -734,7 +803,10 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 		}
 	}
 
-	@Override
+	/*
+	 * Wrapper function that disconnects nicely from another device
+	 * 
+	 */
 	public boolean disconnect(DeviceInterface d) {
 		if(!sendingMessageTo((Device )d)){
 			//Can only disconnect if not sending messages.
@@ -749,6 +821,17 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 		
 	}
 
+	
+	@Override
+	//Wrapper for activeCon() can't have locks in a method that throws suspendexecution
+	public List<DeviceInterface> activeConnections() throws SuspendExecution {
+		return activeCon();
+	}
+
+	/*
+	 * Returns a list of all connections that the devices thinks are still
+	 * active, does not check if the agents are still in range
+	 */
 	private List<DeviceInterface> activeCon() {
 		List<DeviceInterface> connectedTo = new ArrayList<DeviceInterface>();
 		connection.lock();
@@ -762,13 +845,9 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 		return connectedTo;
 	}
 
-	@Override
-	public List<DeviceInterface> activeConnections() throws SuspendExecution {
+	
 
-		return activeCon();
-	}
-
-	@Override
+	@Override 
 	public Element toXML(Element root, Document doc) {
 		// Write to file
 
@@ -813,6 +892,12 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 
 	}
 
+	
+	
+	/*
+	 * Called by a device than wants to connect to us.
+	 * Could cause deadlocks when using syncronized to used trylock instead,
+	 */
 	public boolean acceptConnection(Device d) {
 		boolean result;
 		if (connection.tryLock()) {
