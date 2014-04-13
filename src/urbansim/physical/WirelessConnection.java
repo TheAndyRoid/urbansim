@@ -41,22 +41,28 @@ public class WirelessConnection extends ToXML{
 	}
 	
 	public int getAvalibleBandwidth(){
+		synchronized(this){
 		return avalibleBandwidth;
+		}
 	}
 	
 	public void resetBandwidth(){
+		synchronized(this){
 		avalibleBandwidth = maxBandwidth;
+		}
 	}
 	
 	
 	
 	public void commitBandwidth(int bandwidth){
+		synchronized(this){
 		avalibleBandwidth -= requestBandwidth(bandwidth);
+		}
 	}
 	
 	
 	public int requestBandwidth(int bandwidth){
-		
+		synchronized(this){
 		int result;
 		//System.out.println("Avalible " + avalibleBandwidth);
 		//System.out.println("Requested " + bandwidth);
@@ -69,6 +75,7 @@ public class WirelessConnection extends ToXML{
 		}
 		
 		return result;
+		}
 		
 	}
 	
@@ -191,7 +198,9 @@ public class WirelessConnection extends ToXML{
 	
 	 //Calculate the time to send x bits a distance m returns milliseconds
 	public int timeToSend(double distance, int bits){
-		return (int)Math.ceil((double)bits/bitrateAtDistance(distance))*1000;	
+		return (int)Math.ceil(
+				(double)bits/bitrateAtDistance(distance)*1000
+				);	
 	} 
 	
 

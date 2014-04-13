@@ -11,6 +11,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.DocumentBuilder;
@@ -48,8 +50,13 @@ public class UrbanSim extends SimState implements VehicleLifecycleObserver,
 	public ParallelSequence SAgents;
 	public TraCI traci;
 	public Observer observer;
+	public UI ui= new UI();
 	// Array of all agents
 	Device[] agents;
+	
+	
+	//Lock for connections
+	public Lock connection = new ReentrantLock();
 	
 	//Configuration Options
 	private String caseDir;
@@ -144,11 +151,15 @@ public class UrbanSim extends SimState implements VehicleLifecycleObserver,
 					.size()]);
 
 			// create parallel for faster processing
-			urbansim.SAgents = new ParallelSequence(agents, 12);
+			urbansim.SAgents = new ParallelSequence(agents, 8);
 
 			// Step Agents
 			urbansim.schedule.scheduleOnce(urbansim.SAgents);
 		}
+		
+		//Update the ui
+		state.schedule.scheduleOnce(urbansim.ui);
+		
 		// Log Data
 		 state.schedule.scheduleOnce(urbansim.observer);
 

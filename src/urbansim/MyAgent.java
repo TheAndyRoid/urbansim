@@ -16,6 +16,14 @@ public class MyAgent implements DeviceAgent {
 	private DeviceInterface device;
 	private int floodTTL = 9;
 
+	private void connect(List<DeviceInterface> inRange) throws SuspendExecution{
+		//connect to them all
+		for (DeviceInterface d : inRange) {
+			device.connect(d);
+		}
+		
+	}
+	
 	// This method must be processor friendly. It must call sleep when it has
 	// finished processing
 	public void main() throws SuspendExecution {
@@ -29,27 +37,31 @@ public class MyAgent implements DeviceAgent {
 			// Scan for devices
 			List<DeviceInterface> inRange = device.scan();
 			
-			//connect to them all
-			for (DeviceInterface d : inRange) {
-				device.connect(d);
-			}
+			
 			//System.out.println(device.getName());
 
 			// send message if we are the source.
 			if (device.getName().equals("busStop@flood@34")) {
+				
+				connect(inRange);
+				
 				//System.out.println("Source");
 				//System.out.println(device.getName());
 				Flood flood = new Flood(floodTTL, "busStop@flood@20");
 				// send to everyone we can.
 				for(DeviceInterface d:device.activeConnections()){
-					Message msg = new Message(device, flood, d, 1000);
+					Message msg = new Message(device, flood, d, 500);
 					device.sendTo(d, msg);
 					//System.out.println("Send Message");
 				}
 			} else {
 				// System.out.println("Not Source");
 				Message rcv = device.recv();
-				while(rcv != null) {					
+				//if(rcv != null){
+					connect(inRange);
+				//}
+				while(rcv != null) {	
+					
 					if (((Flood) rcv.obj).target.equals(device.getName())) {
 						// hack exit
 						System.out.println("Message            Recived");
@@ -72,7 +84,7 @@ public class MyAgent implements DeviceAgent {
 									//System.out.println("Forwarded");
 									Message msg = new Message(device, tmp, d, rcv.size);
 									device.sendTo(d, msg);
-									device.sleep();
+									//device.sleep();
 								}
 							}
 						}

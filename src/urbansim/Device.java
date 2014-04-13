@@ -53,7 +53,7 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 	private String storageType;
 	
 	private long agentID;
-	private SimState simState;
+	private UrbanSim simState;
 	private DeviceAgent userAgent;
 	public WirelessConnection wirelessInterface;
 	public LongTermStorage storage;
@@ -64,7 +64,7 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 	private int range = 50;
 
 	private Lock running = new ReentrantLock();
-	private Lock connection = new ReentrantLock();
+	
 
 	private double startTime = 0;
 	private double agentTime = 0;
@@ -101,46 +101,59 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 
 	
 	/*
-	 * Attempts to send messages that are send buffer. 
-	 * Checks that receiving devices are in range and that a connection to the still exists.
-	 * Once the message is sent they are removed from the send buffer.
+	 * Attempts to send messages that are send buffer. Checks that receiving
+	 * devices are in range and that a connection to the still exists. Once the
+	 * message is sent they are removed from the send buffer.
 	 */
 	private void processSendBuffer() {
 		List<Message> toRemove = new ArrayList<Message>();
-		synchronized (sendBuffer) {
-			synchronized (ammountSent) {
+		synchronized (simState.connection) {
+			//lock from others
+			synchronized (sendBuffer) {
 				for (Message m : sendBuffer) {
 					Device dst = (Device) m.dst;
-					// Check that the recvr is still in range and calculate
-					// bandwidth
+					// Check that the recvr is still in range and connected
+					// to
 					if (inRange(dst) && connectedTo(dst)) {
 						int toSend = m.size - ammountSent.get(m);
-						int bitsSent =sendTime(dst, m, toSend); 
-						if(m.size <= toSend+bitsSent ){
-							//The message has been sent remove it
+						int bitsSent = sendTime(dst, m, toSend);
+						if (m.size == toSend + bitsSent) {
+							// The message has been sent remove it
 							toRemove.add(m);
-						}else{
-							//The message has not been sent leave it in the buffer and update the number of bits sent
-							ammountSent.put(m,(bitsSent + ammountSent.get(m)));
+						} else {
+							// The message has not been sent leave it in the
+							// buffer and update the number of bits sent
+							ammountSent.put(m, (bitsSent + ammountSent.get(m)));
 						}
-						System.out.println(ammountSent.get(m)+ " of " +m.size+ " Sent");
+
+						Edge c = findEdge(dst);
+						if (c == null) {
+							System.out.println("Connection does not exist?");
+						} else {
+							Double dataSent = (Double) c.getInfo();
+							dataSent += bitsSent;
+							c.setInfo(dataSent);
+						}
+						// System.out.println("ProcessBuffer "
+						// + ammountSent.get(m) + " of " + m.size
+						// + " Sent");
 					} else {
-						//We are no longer connected or out of range.
+						// We are no longer connected or out of range remove
+						// the message
 						toRemove.add(m);
+
 					}
 				}
-				for(Message m:toRemove){
-					sendBuffer.remove(m);
-					ammountSent.remove(m);
+				synchronized (ammountSent) {
+
+					for (Message m : toRemove) {
+						sendBuffer.remove(m);
+						ammountSent.remove(m);
+					}
 				}
-				
-				
 			}
 		}
-
 	}
-	
-	
 	
 	/*
 	 * Constructor used when an agent has a fixed position
@@ -176,7 +189,7 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 			Map<String, File> batteryTypes,
 			Map<String, File> storageTypes) {
 		agentID = id;
-		simState = state;
+		simState = (UrbanSim)state;
 
 		// Read agent and interface in.
 		readAgent(deviceType, agentTypes, interfaceTypes,agentData,batteryTypes,storageTypes);
@@ -281,8 +294,10 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 		if (agentTime < startTime) {
 			// calculate cpu idle time and drain battery
 			battery.calculateSleepDrain(startTime - agentTime);
-			// Reset connection bandwidth
+			// Reset interface bandwidth
 			wirelessInterface.resetBandwidth();
+			// Reset connection bandwidth
+			
 		}
 	}
 	
@@ -301,13 +316,16 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 		//update time
 		updateTime();
 		
+		//Stops the gui looking bad and these would be detected by the device
+		removeDudConnections();
+		
 		if (agentTime < (startTime + stepTime) && battery.hasPower()) {
 			running.lock();
 			try {
 				if (co.getState() != Coroutine.State.RUNNING
 						&& co.getState() != Coroutine.State.FINISHED) {
 					battery.startTimer(); 
-					processSendBuffer();
+					
 					do {
 						double startTime = agentTime;
 						co.run();
@@ -480,37 +498,105 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 		colour = new Color(r,g,b);	
 	}
 	
+	/*
+	 * Reset the bandwidth of the connection.
+	 */
+	
+	//TODO
+	public void resetConnectionBandwidthUI(){
+
+			for(int i = 0; i<activeConnections.size(); i++){
+				Edge e = activeConnections.get(i);
+				e.setInfo(new Double(0.0));
+			}	
+	}
+	
+	/*
+	 * Search for existing connection between the two devices. 
+	 * Returns the edge if found, otherwise returns null;
+	 */
+	//TODO
+
+	private Edge checkForExistingConnection(Object nodeA,Object nodeB){
+		UrbanSim urbansim = (UrbanSim) simState;
+		//get all edges that are associated with this node.
+		Bag knownConnections = urbansim.connected.getEdgesIn(nodeA);
+		for(Object o:knownConnections){
+			Edge e = (Edge)o;
+			if(e.getOtherNode(nodeA).equals(nodeB)){
+				return e;
+			}
+			
+		}
+		return null;
+	}
+
+	/*
+	 * Remove connections in the ui that no longer exist
+	 */
+	private void removeOldConnectionsUI(){
+		UrbanSim urbansim = (UrbanSim) simState;
+		//get all edges that are associated with this node.
+		Bag knownConnections = urbansim.connected.getEdgesIn(this);
+		List<Edge> toRemove = new ArrayList<Edge>();
+		for(Object o:knownConnections){
+			Edge e = (Edge)o;
+			if(!connectedTo((Device)e.getOtherNode(this))){
+				//The connection does not exist add it to the remove list
+				toRemove.add(e);
+			}			
+		}		
+		//Remove the dead edges
+		for(Edge e:toRemove){
+			urbansim.connected.removeEdge(e);
+		}
+		
+	}
 	
 	
 	/*
-	 * Adds a connection to the other device
+	 * Called by a device than wants to connect to us.
+	 * Could cause deadlocks when using syncronized to used trylock instead,
+	 */
+	public boolean acceptConnection(Device d) {
+		boolean result;
+		synchronized(simState.connection){
+		if (activeConnections.size() < wirelessInterface.maxConnections()) {
+			// Can accept connection
+			Edge e = new Edge(this, d, new Double(0));
+			activeConnections.add(e);
+			result = true;
+		} else {
+			result = false;
+		}
+		return result;
+		}
+		
+	}
+	
+	
+	
+	/*
+	 * Adds a connection to this device and the one that we are connecting to
 	 */
 	private boolean addConnection(Device d) {
 		boolean result;
 		Edge e = new Edge(this, d, new Double(0));
-
-		//System.out.println(activeConnections.size());
-		connection.lock();
-		try {
+		// System.out.println(activeConnections.size());
+		synchronized(simState.connection){
 			// can we make the connection
-			if ((activeConnections.size() < wirelessInterface.maxConnections())) {
+			if ((activeConnections.size() < wirelessInterface.maxConnections() && !connectedTo(d))) {
 				// Did the other device acceptConnection
-				
 				if (d.acceptConnection(this)) {
-					UrbanSim urbansim = (UrbanSim) simState;
-					synchronized (urbansim.connected) {
 					activeConnections.add(e);
-					urbansim.connected.addEdge(e);	
-					}
+
 					result = true;
 				} else {
 					result = false;
 				}
-			}else{
-			result = false;
+			} else {
+				result = false;
 			}
-		} finally {
-			connection.unlock();
 		}
 		return result;
 	}
@@ -518,10 +604,12 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
  * Returns true if there is a connection to the device otherwise false	
  */
 	public boolean connectedTo(Device d) {
-		if (findEdge(d) != null) {
+		synchronized(simState.connection){
+		if (findEdge(d) != null) {			
 			return true;
 		} else {
 			return false;
+		}	
 		}
 	}
 
@@ -541,94 +629,141 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 	
 	
 	/*
-	 * Remove the device from the list of active connections on this device.
+	 * Remove the device from the list of active connections on this device. Remove any pending messages
 	 */
 	public boolean removeConnection(Device b) {
-		
-		Edge toRemove = findEdge(b);
-		if (toRemove != null) {
-			connection.lock();
-			try {
-				activeConnections.remove(toRemove);
-				//System.out.println("Removed edge");
-				// need to update the ui
-				UrbanSim urbansim = (UrbanSim) simState;
-				synchronized (urbansim.connected) {
-					urbansim.connected.removeEdge(toRemove);
+		boolean result = false;
+		synchronized (simState.connection) {
+			Edge e = findEdge(b);
+			if (e != null) {
+
+				// connection is removed
+				activeConnections.remove(e);
+
+				// Remove pending messages
+
+				synchronized (sendBuffer) {
+					List<Message> toRemove = new ArrayList<Message>();
+					for (Message m : sendBuffer) {
+						if (m.dst == b) {
+							toRemove.add(m);
+						}
+					}
+
+					for (Message m : toRemove) {
+						sendBuffer.remove(m);
+						ammountSent.remove(m);
+					}
 				}
-			} finally {
-				connection.unlock();
+
+				// removed the connection
+				return true;
 			}
-			//removed the connection
-			return true;
+
 		}
-		return false;		
+
+		return false;
 	}
 
 	/*
-	 * Resets all connections with this device. It also informs all devices that it was connected to 
+	 * Resets all connections with this device.
 	 * 
 	 */
 	private void resetConnections() {
 		UrbanSim urbansim = (UrbanSim) simState;
-		connection.lock();
-		try {
-			for(Edge e: activeConnections){
+		synchronized (simState.connection) {
+			List<Edge> toRemove = new ArrayList<Edge>(activeConnections); 
+			for(Edge e: toRemove){
 				//inform the other device.
-				((Device)e.getOtherNode(this)).removeConnection(this);
+				//((Device)e.getOtherNode(this)).removeConnection(this);
+				disconnect(((Device)e.getOtherNode(this)));
 			}
 			activeConnections.clear();
-		} finally {
-			connection.unlock();
 		}
-		
-		synchronized (urbansim.connected) {
-			urbansim.connected.removeNode(this);
-			updateUI();
+	}
+	
+	/*
+	 *Update the ui. This is not thread safe as it is done by a single task
+	 */
+	public void updateUI() {
+		UrbanSim urbansim = (UrbanSim) simState;
+		// synchronized (urbansim.connected) {
+		// Removing node destroys all the edges
+		// urbansim.connected.removeNode(this);
+		// Add the node back.
+		// urbansim.connected.addNode(this);
+		// Add all the edges
+		// Remove connections that nolonger exist
+		removeOldConnectionsUI();
+
+		for (Edge e : activeConnections) {
+			// get the other end of the connection
+			Device other = (Device) e.getOtherNode(this);
+			
+			
+			Double ourValue = (Double) e.getInfo();
+
+			Edge otherEdge = other.findEdge(this);
+			if(otherEdge==null){
+				//Other device does not have the connection. Remove it from the ui
+				Edge tmp = checkForExistingConnection(this, other);	
+				urbansim.connected.removeEdge(tmp);
+				//done for this edge
+				continue;
+			}
+			
+			Double otherValue = (Double) otherEdge.getInfo();
+			Double sum = new Double(otherValue + ourValue);
+			
+			
+			
+			//get the edge
+			Edge tmp = checkForExistingConnection(this, other);		
+			
+			if (tmp == null) {
+				// Create the edge as it does not exist
+				Edge ui = new Edge(this, other, sum);
+				urbansim.connected.addEdge(ui);
+			} else {
+			
+				//get the value of the edge.
+				//TODO track total bandwith per connection
+				//Double value = (Double)tmp.getInfo();
+				//sum +=value;
+				
+				//Update the value
+				urbansim.connected.updateEdge(tmp,this,other,sum);
+
+			}
+
+			// else the edge exists and has already got values
+
 		}
 
 	}
 	
-	private void updateUI() {
-		UrbanSim urbansim = (UrbanSim) simState;
-		synchronized (urbansim.connected) {
-			urbansim.connected.removeNode(this);
-			synchronized (activeConnections) {
-				for (Edge e : activeConnections) {
-					urbansim.connected.addEdge(e);
-				}
-			}
-		}
-	}
 	
-	
-	private Edge findEdge(Device b) {
+	public Edge findEdge(Device b) {
 		Edge found = null;
-		UrbanSim urbansim = (UrbanSim) simState;
-		connection.lock();
-		try {
-			for (Edge e : activeConnections) {
-				if (e.getOtherNode(this) == b) {
-					// System.out.println("Found edge");
-					found = e;
-					break;
-				}
+		synchronized(simState.connection){
+		for (Edge e : activeConnections) {
+			if (e.getOtherNode(this) == b) {
+				// System.out.println("Found edge");
+				found = e;
+				break;
 			}
-		} finally {
-			connection.unlock();
 		}
+		}
+
 		return found;
 	}
 
 	private boolean inRange(Device b) {
-		UrbanSim urbansim = (UrbanSim) simState;
 		Double2D aPos = this.currentPosition();
-
 		if (aPos.distance(b.currentPosition()) <= wirelessInterface.maxRange()) {
 			return true;
 		} else {
 			// That agent is out of range.
-			removeConnection(b);
 			return false;
 		}
 	}
@@ -676,42 +811,49 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 	 * This function calculates if the message can be sent this simulation cycle or the next because of 
 	 * limited bandwidth. It does not check if the devices are within range. 
 	 * 
-	 * If the message can be sent the receiving devices receive method is called and -1 returned
-	 * otherwise the number of bits sent is returned
+	 * If the message can be sent the receiving devices receive method is called.
+	 * returns the number of bits sent this time interval
 	 */
 	private int sendTime(Device dst, Message msg, int bitsToSend) {
 		synchronized (sendBuffer) {
-			synchronized (ammountSent) {
+
+			System.out.println("Bits to send "+bitsToSend);
 				// calculate distance
 				Double distance = currentPosition().distance(
 						dst.currentPosition());
 				// Time bits
 				int sendTime = wirelessInterface.timeToSend(distance,
 						bitsToSend);
-				 if (agentTime + sendTime > startTime + stepTime) {
+				System.out.println("SendTime "+ sendTime);
+				if (agentTime + sendTime > startTime + stepTime) {
 					// The devices could move closer or further apart causing
-					// bitrate to change, send what we can. 
-					
+					// bitrate to change, send what we can.
+
 					int timeRemaning = (int) ((startTime + stepTime) - agentTime);
+					System.out.println("TimeRemaining "+ timeRemaning);
 					int maxbitsSent = wirelessInterface.bitsSent(distance,
 							timeRemaning);
-					int actualBitsSent = getBandwidth(dst,maxbitsSent);
+					int actualBitsSent = getBandwidth(dst, maxbitsSent);
 					// return the actual number of bits sent.
-					//System.out.println("ActualBitsSent "+ actualBitsSent);
+					 System.out.println("ActualBitsSent Top"+ actualBitsSent);
 					return actualBitsSent;
 				} else {
 					// The message could be completely sent in this interval
-					int actualBitsSent = getBandwidth(dst,bitsToSend);
 					
-						msg.recvtime = agentTime + sendTime;
-						// give the message to the other device
+					int actualBitsSent = getBandwidth(dst, bitsToSend);
+
+					msg.recvtime = agentTime + sendTime;
+					// give the message to the other device
 					dst.receive(msg);
-						// remove the msg from send buffers if exists.
-						
+
+					// Add the amount sent to the connection total.
+					 System.out.println("ActualBitsSent Botum"+ actualBitsSent);
+										
 					return actualBitsSent;
-					
-				}	
-			}
+
+				}
+
+			
 		}
 
 	}
@@ -740,51 +882,73 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 	 * and that there is not already a message waiting in the send buffer.
 	 * 
 	 */
-	private void sendMessage(DeviceInterface a, Message msg) {
+	private boolean sendMessage(DeviceInterface a, Message msg) {
+
 		Device dst = (Device) a;
 		// System.out.println("Send To!");
-		if (msg != null && inRange(dst) && connectedTo(dst)
-				&& !sendingMessageTo(dst)) {
+		synchronized (simState.connection) {
 
-			// Time the message was sent
-			msg.sendtime = agentTime;
+			if (connectedTo(dst) && (msg != null) && inRange(dst)
+					&& !sendingMessageTo(dst)) {
 
-			// System.out.println("Agent Time " +
-			// Double.toString(msg.sendtime));
+				// Time the message was sent
+				msg.sendtime = agentTime;
 
-			int sentbits = sendTime(dst, msg, msg.size);
-			if (sentbits == msg.size) {
-				// Message was sent
-				sendBuffer.remove(msg);
-				ammountSent.remove(msg);
+				// System.out.println("Agent Time " +
+				// Double.toString(msg.sendtime));
+
+				int sentbits = sendTime(dst, msg, msg.size);
+
+				synchronized (ammountSent) {
+					synchronized (sendBuffer) {
+						if (sentbits == msg.size) {
+							// Message was sent
+							sendBuffer.remove(msg);
+							ammountSent.remove(msg);
+						} else {
+							// System.out.println("Could not send the message in this step");
+							sendBuffer.add(msg);
+							ammountSent.put(msg, sentbits);
+						}
+					}
+				}
+
+				System.out.println("Send Message " + sentbits + " of "
+						+ msg.size + " Sent");
+				// System.out.println("Recv Time " +
+				// Double.toString(msg.recvtime));
+
+				Edge c = findEdge(dst);
+				if (c == null) {
+					System.out.println("Connection does not exist");
+				} else {
+					Double dataSent = (Double) c.getInfo();
+					dataSent += sentbits;
+					c.setInfo(dataSent);
+				}
+
+				// Log the message as sent.
+				synchronized (logSent) {
+					logSent.add(msg);
+				}
+				return true;
+
 			} else {
-				System.out.println("Could not send the message in this step");
-				sendBuffer.add(msg);
-				ammountSent.put(msg, sentbits);
+				// Error sending message
+				agentTime += 20;
+				return false;
 			}
-			System.out.println(sentbits + " of " + msg.size + " Sent");
-			// System.out.println("Recv Time " + Double.toString(msg.recvtime));
-
-			// Log the message as sent.
-			synchronized (logSent) {
-				logSent.add(msg);
-			}
-
-		} else {
-			// Error sending message
-			agentTime += 20;
 		}
+
 	}
 
 	// Wrapper function for deviceInterface
 	public void sendTo(DeviceInterface a, Message msg) throws SuspendExecution {
 		// check that a connection exists
-		if (connectedTo((Device) msg.dst)) {
-			sendMessage(a, msg);
-			checkGotTime();
-		} else {
-			return;
-		}
+		sendMessage(a, msg);
+		checkGotTime();
+		return;
+
 	}
 
 	// Wrapper function for deviceInterface
@@ -816,6 +980,10 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 	
 
 	// This is for the hack cast I'm aware, its bad but needed
+	/*
+	 * The scan will remove any connections that are impossible, ie out of range
+	 * 
+	 */
 	@SuppressWarnings("unchecked")
 	public List<DeviceInterface> scan() throws SuspendExecution {
 		// Time to perform a scan
@@ -825,14 +993,40 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 		UrbanSim urbansim = (UrbanSim) simState;
 		List<Device> inRange = urbansim.inRange(this, wirelessInterface);
 		
+		
+		
 		checkGotTime();
 		// This is a hack cast, but should be OK
 		return (List<DeviceInterface>) (List<?>) inRange;
+	}
+	
+	
+	
+	public void removeDudConnections() {
+		synchronized(simState.connection){			
+		
+			// Check the list of active connections and remove any that arn't in
+			// range.
+			List<Edge> toRemove = new ArrayList<Edge>();
+			for (Edge e : activeConnections) {
+				if (!inRange((Device) e.getOtherNode(this))) {
+					toRemove.add(e);
+				}
+			}			
+			// Remove the dead connections
+			for (Edge e : toRemove) {
+				removeConnection((Device)e.getOtherNode(this));
+				((Device)e.getOtherNode(this)).removeConnection(this);
+			}	
+			
+		}
 	}
 
 	public WirelessConnection getInterface() {
 		return wirelessInterface;
 	}
+	
+	public Battery getBattery(){return battery;}
 
 	/*
 	 * Causes the agent to sleep at it current position of execution.Receiving a
@@ -875,19 +1069,20 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 	 * 
 	 */
 	public boolean disconnect(DeviceInterface d) {
-		if(!sendingMessageTo((Device )d)){
-			//Can only disconnect if not sending messages.
-			removeConnection((Device) d);
-			// This is a kind disconnect
-			((Device) d).removeConnection(this);
-			return true;
-		}else{
-			return false;
-		}
-		
-		
+		synchronized (simState.connection) {
+				if (!sendingMessageTo((Device) d) && connectedTo((Device) d)) {
+					// Can only disconnect if not sending messages and connected
+					// to the device
+					removeConnection((Device) d);
+					// This is an unkind disconnect and will cause all messages
+					// to be dropped
+					((Device) d).removeConnection(this);
+					return true;
+				} else {
+					return false;
+				}
+			}
 	}
-
 	
 	@Override
 	//Wrapper for activeCon() can't have locks in a method that throws suspendexecution
@@ -901,14 +1096,13 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 	 */
 	private List<DeviceInterface> activeCon() {
 		List<DeviceInterface> connectedTo = new ArrayList<DeviceInterface>();
-		connection.lock();
-		try {
+		synchronized(simState.connection){
+			
 			for (Edge e : activeConnections) {
 				connectedTo.add((DeviceInterface) e.getOtherNode(this));
 			}
-		} finally {
-			connection.unlock();
-		}
+			
+		} 
 		return connectedTo;
 	}
 
@@ -961,33 +1155,7 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 
 	
 	
-	/*
-	 * Called by a device than wants to connect to us.
-	 * Could cause deadlocks when using syncronized to used trylock instead,
-	 */
-	public boolean acceptConnection(Device d) {
-		boolean result;
-		if (connection.tryLock()) {
-			try {
-				if(activeConnections.size() < wirelessInterface.maxConnections()){
-					//Can accept connection
-					Edge e = new Edge(this, d, new Double(0));
-					activeConnections.add(e);			
-					
-					// UI updated by caller
-					
-					result = true;
-				}else{
-					result = false;
-				}
-			} finally {
-				connection.unlock();
-			}
-		} else {
-			result = false;
-		}
-		return result;
-	}
+
 	public boolean hasPower(){
 		return battery.hasPower();
 	}

@@ -3,8 +3,8 @@
   <agent type="flood"/>
   <interface type='wifi'/>
   <battery type='3000mah'/> 
-  <cpusleepdrain mahs="5"/>    
-  <cpudrain mahs="1"/>   
+  <cpusleepdrain mahs="0.01"/>    
+  <cpudrain mahs="0.5"/>   
   <sumoType type="car"/>
   <storage type="unlimited"/> 
     <portrayal shape="circle" scale="7">

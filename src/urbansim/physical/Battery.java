@@ -29,6 +29,10 @@ public class Battery extends ToXML{
 	private long cpuTime = 0;
 	
 
+	
+	public double getRemainingCapacity(){return capacityremaining;}
+	public double getMaxCapacity(){return maxcapacity;}
+	
 	public Battery(File file,
 				Double cpuRate,
 						Double cpuSleepRate,
