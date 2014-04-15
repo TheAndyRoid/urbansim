@@ -117,10 +117,12 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 				// Remove messages that have been sent
 				synchronized (ammountSent) {
 					for (Message m : sendBuffer) {
+						
 						if (m.recvtime != 0 && m.recvtime < agentTime) {
 							// Message was sent last timestep remove it.
 							toRemove.add(m);
 						}
+						
 					}
 					// Remove
 					for (Message m : toRemove) {
@@ -131,6 +133,18 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 					toRemove.clear();
 
 					for (Message m : sendBuffer) {
+						
+						//The message might have already been sent, but can't be remove due to timing
+						Integer sent = ammountSent.get(m);
+						if(sent != null){
+							if(sent == m.size){
+								//Skip this message it has already been sent by sendMessage
+								continue;
+							}
+						}
+						
+						
+						
 						Device dst = (Device) m.dst;
 						// Check that the recvr is still in range and connected
 						// to
@@ -145,13 +159,22 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 								needsSent.add(m);
 							}
 							
+							if(bitsSent<0){
+								System.out.println("Sent negative bits - how");
+							}
+							
+							
 							Edge c = findEdge(dst);
 							if (c == null) {
 								System.out
 										.println("Connection does not exist?");
 							} else {
 								Double dataSent = (Double) c.getInfo();
+								
 								dataSent += bitsSent;
+								if(dataSent>1500){
+									System.out.println("Sent more than possible ever");
+								}
 								c.setInfo(dataSent);
 							}
 							// System.out.println("ProcessBuffer "
@@ -307,10 +330,24 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 	 */
 	private void updateTime() {
 		// get time
-		startTime = simState.schedule.getTime() * stepTime;
-		if (agentTime < startTime) {			
-			agentTime = startTime;			
+
+		double newStartTime = simState.schedule.getTime() * stepTime;
+		if (newStartTime > startTime) {
+			//new cycle update stuff
+			
+			updateConsumables();
+			
+			//Stops the gui looking bad and these would be detected by the device
+			removeDudConnections();
+			
+			processSendBuffer();
+
+			startTime = newStartTime;
+			if (agentTime < startTime) {
+				agentTime = startTime;
+			}
 		}
+
 	}
 	/*
 	 * Updates battery drain and resets bandwidth.
@@ -327,6 +364,8 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 		wirelessInterface.resetBandwidth();
 		// Reset connection bandwidth
 		
+		resetConnectionBandwidthUI();
+		
 	}
 	
 	
@@ -340,15 +379,9 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 	 */
 	public void step(SimState state) {
 		//update time
-		updateTime();	
-		//update battery and bandwidth
-		updateConsumables();
+		updateTime();
 		
-		
-		//Stops the gui looking bad and these would be detected by the device
-		removeDudConnections();
-		
-		processSendBuffer();
+			
 		
 		if (agentTime < (startTime + stepTime) && battery.hasPower()) {
 			running.lock();
@@ -363,21 +396,23 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 						double stopTime = agentTime;
 						battery.mainloop(stopTime-startTime);
 						agentTime++;
-					} while ((agentTime < startTime + stepTime)
+					} while ((agentTime < (startTime + stepTime))
 							&& !recvBuffer.isEmpty() && coRun);
 					// update connections ui
 					 
 					battery.stopTimer(); 
 				}
+		} finally {
+			running.unlock();
+		}
 
-			} finally {
-				running.unlock();
-			}
+			
 		}else if(battery.hasPower() == false && activeConnections.isEmpty() != true){
 			resetConnections();
 			System.out.println("                        Battery Ran OUT");
 
 		}
+		
 
 	}
 
@@ -535,12 +570,12 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 	 */
 	
 	//TODO
-	public void resetConnectionBandwidthUI(){
-
-			for(int i = 0; i<activeConnections.size(); i++){
-				Edge e = activeConnections.get(i);
+	public void resetConnectionBandwidthUI() {
+		synchronized (simState.connection) {
+			for (Edge e : activeConnections) {
 				e.setInfo(new Double(0.0));
-			}	
+			}
+		}
 	}
 	
 	/*
@@ -769,7 +804,9 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 			
 			Double otherValue = (Double) otherEdge.getInfo();
 			Double sum = new Double(otherValue + ourValue);
-			
+			if(sum<0){
+				System.out.println("No such thing as negative bandwidth");
+			}
 			
 			
 			//get the edge
@@ -841,10 +878,14 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 
 		// Check if this device can be started if not already running
 		// and that the message is not in the next simulation cycle.
-		updateTime();
-		if (msg.recvtime < (startTime + stepTime)) {
-			if (running.tryLock()) {
-				try {
+		
+		
+		if (running.tryLock()) {
+			try {
+				updateTime();
+				
+				if (msg.recvtime < (startTime + stepTime)) {
+
 					// device has time remanining.
 					if (agentTime < (startTime + stepTime)) {
 						if (co.getState() == Coroutine.State.NEW
@@ -857,9 +898,10 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 							battery.mainloop(stopTime - startTime);
 						}
 					}
-				} finally {
-					running.unlock();
+
 				}
+			} finally {
+				running.unlock();
 			}
 		}
 
@@ -879,16 +921,27 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 		// Time bits
 		int sendTime = wirelessInterface.timeToSend(distance, bitsToSend);
 //		System.out.println("SendTime " + sendTime);
-		if (agentTime + sendTime > startTime + stepTime) {
+		
+		double continueSending = agentTime;
+		
+		if(agentTime>(startTime+stepTime)){
+			//The agent has slept through a time interval , but will still send pending messages from the start of that interval
+			continueSending = startTime;
+		}
+		
+		if ((continueSending + sendTime) > (startTime + stepTime)) {
 			// The devices could move closer or further apart causing
 			// bitrate to change, send what we can.
 
-			int timeRemaning = (int) ((startTime + stepTime) - agentTime);
+			int timeRemaning = (int) ((startTime + stepTime) - continueSending);
 			// System.out.println("TimeRemaining "+ timeRemaning);
 			int maxbitsSent = wirelessInterface.bitsSent(distance, timeRemaning);
 			int actualBitsSent = getBandwidth(dst, maxbitsSent);
 			// return the actual number of bits sent.
 //			System.out.println("ActualBitsSent Top" + actualBitsSent);
+			if(actualBitsSent<0){
+				System.out.println("Negative bits");
+			}
 			return actualBitsSent;
 		} else {
 			// The message could be completely sent in this interval
@@ -911,6 +964,10 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 			// Add the amount sent to the connection total.
 //			System.out.println("ActualBitsSent Botum" + actualBitsSent);
 
+			if(actualBitsSent<0){
+				System.out.println("Negative bits");
+			}
+			
 			return actualBitsSent;
 
 		}
@@ -945,7 +1002,7 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 	 * Messages are left in the send buffer and cleared on the next simulation step, 
 	 * this stops the devices from dissconnecting before the message is sent.
 	 */
-	private boolean sendMessage(DeviceInterface a, Message msg) {
+	private long sendMessage(DeviceInterface a, Message msg) {
 
 		Device dst = (Device) a;
 		// System.out.println("Send To!");
@@ -961,22 +1018,25 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 				// Double.toString(msg.sendtime));
 
 				int sentbits = sendTime(dst, msg, msg.size);
+				if(sentbits<0){
+					System.out.println("Sent negative bits - how");
+				}
 
 				synchronized (ammountSent) {
 					synchronized (sendBuffer) {
-							//put the message in the send buffer and the number of bits sent
-							sendBuffer.add(msg);
-							ammountSent.put(msg, sentbits);
+						// put the message in the send buffer and the number of
+						// bits sent
+						sendBuffer.add(msg);
+						ammountSent.put(msg, sentbits);
 					}
 				}
 
-				if(sentbits == msg.size){
-					((Device)msg.dst).receive(msg);
+				if (sentbits == msg.size) {
+					((Device) msg.dst).receive(msg);
 				}
-				
-				
-//				System.out.println("Send Message " + sentbits + " of "
-//						+ msg.size + " Sent");
+
+				// System.out.println("Send Message " + sentbits + " of "
+				// + msg.size + " Sent");
 				// System.out.println("Recv Time " +
 				// Double.toString(msg.recvtime));
 
@@ -985,6 +1045,9 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 					System.out.println("Connection does not exist");
 				} else {
 					Double dataSent = (Double) c.getInfo();
+					if(dataSent>1500){
+						System.out.println("Sent more than possible ever");
+					}
 					dataSent += sentbits;
 					c.setInfo(dataSent);
 				}
@@ -993,22 +1056,46 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 				synchronized (logSent) {
 					logSent.add(msg);
 				}
-				return true;
+				return 0;
 
-			} else {
-				// Error sending message
-				agentTime += 20;
-				return false;
+			} else if (!connectedTo(dst) || !inRange(dst)) {
+				// Error sending message not connected
+				agentTime += 5;
+				return -1;
+			} else if (sendingMessageTo(dst)) {
+				for (Message m : sendBuffer) {
+					if (m.dst == dst && (m.recvtime == 0 || m.recvtime > agentTime)) {
+						if (m.recvtime == 0 ) {
+							// message can't be sent this interval, wait till
+							// next
+							return (long) ((startTime + stepTime)-agentTime);
+						} else {
+							// m.recvtime > agentTime, but less that next step
+							// message will be sent this interval return the
+							// sleep time for the next earliest  message
+							return (long) ((m.recvtime + 1)-agentTime);
+						}
+					}
+				}
 			}
 		}
+
+		// should not get here, but return an error
+		return -1;
 
 	}
 
 	// Wrapper function for deviceInterface
-	public boolean sendTo(DeviceInterface a, Message msg) throws SuspendExecution,StopException {
+	/*Sends a message to the other device only if there are no other messages being sent to that device, 
+	 * we are connected to that device and within range.
+	 * returns 0 on success
+	 * returns >0 when there is a message being sent already, value is the earliest time that the device might accept a message
+	 * returns -1 when there is no connection or device is out of range
+	 */
+	public long sendTo(DeviceInterface a, Message msg) throws SuspendExecution,StopException {
 		isRunning();
 		// check that a connection exists
-		boolean result = sendMessage(a, msg);
+		long result = sendMessage(a, msg);
 		checkGotTime();
 		return result;
 
@@ -1107,9 +1194,9 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 	 * Increases agentTime by the corresponding amount. Causes the agent to not
 	 * be runnable till after this time.
 	 */
-	public void sleep(int seconds) throws SuspendExecution,StopException {
+	public void sleep(long millaseconds) throws SuspendExecution,StopException {
 		isRunning();
-		agentTime += seconds * stepTime;
+		agentTime += millaseconds;
 		Coroutine.yield();
 	}
 

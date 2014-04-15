@@ -48,14 +48,25 @@ public class MyAgent implements DeviceAgent {
 				//System.out.println(device.getName());
 				Flood flood = new Flood(floodTTL, "busStop@flood@20");
 				// send to everyone we can.
-				for(DeviceInterface d:device.getActiveConnections()){
+				long minSleep = Long.MAX_VALUE;
+				for (DeviceInterface d : device.getActiveConnections()) {
 					Message msg = new Message(device, flood, d, 500);
-					
-					if(device.sendTo(d, msg)){
-						System.out.println("Send Message");	
-					}
-					
-				device.sleep(1);	
+					long ret = device.sendTo(d, msg);
+					if (ret == 0) {
+						System.out.println("Send Message");
+					} else if (ret == -1) {
+						System.out.println("Nonrecoverable Error");
+					} else if (ret > 0) {
+						System.out
+								.println("Already sending a message must wait "
+										+ ret + "ms");
+						if(ret<minSleep){
+							minSleep = ret;
+						}
+					}						
+				}
+				if(minSleep != Long.MAX_VALUE){
+					device.sleep(minSleep);
 				}
 			} else {
 				// System.out.println("Not Source");

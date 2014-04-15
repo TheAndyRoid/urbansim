@@ -164,7 +164,7 @@ public class WirelessConnection extends ToXML{
 		
 	}
 	 //Calculate the bandwidth at a set range
-	public double bitrateAtDistance(double m) {
+	public double bitrateAtDistance(double m) {		
 		//System.out.println("Distance: " +m);
 		Map.Entry<Double, Integer> low = distanceToBitrate.floorEntry(m);
 		Map.Entry<Double, Integer> high = distanceToBitrate.ceilingEntry(m);
@@ -185,7 +185,7 @@ public class WirelessConnection extends ToXML{
 			
 			double highValue = high.getValue();
 			double fraction = (m - lowKey) / (highKey - lowKey);
-			double result = (double)(lowValue + (highValue - lowValue)
+			double result = (lowValue + (highValue - lowValue)
 					* fraction);
 			//System.out.println("Calculated Bitrate: " + Double.toString(result)+"kbps");
 			return result;
@@ -199,7 +199,7 @@ public class WirelessConnection extends ToXML{
 	 //Calculate the time to send x bits a distance m returns milliseconds
 	public int timeToSend(double distance, int bits){
 		return (int)Math.ceil(
-				(double)bits/bitrateAtDistance(distance)*1000
+				((double)bits)/bitrateAtDistance(distance)*1000
 				);	
 	} 
 	

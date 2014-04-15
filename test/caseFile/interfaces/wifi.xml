@@ -9,10 +9,10 @@
   <handshake ms="2"/>
   <bitrateAtDistance>
     <point  meters='0' kbps='1500'/>
-    <point  meters='10' kbps='1200'/>
-    <point  meters='20' kbps='1000'/>
-    <point  meters='30' kbps='1000'/>
-    <point  meters='40' kbps='1000'/>
+    <point  meters='10' kbps='1500'/>
+    <point  meters='20' kbps='1500'/>
+    <point  meters='30' kbps='1500'/>
+    <point  meters='40' kbps='1500'/>
     <point  meters='45' kbps='0'/>
   </bitrateAtDistance>
   <scanTime ms='100'/>

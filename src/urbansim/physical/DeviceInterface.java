@@ -10,11 +10,11 @@ import de.matthiasmann.continuations.SuspendExecution;
 
 //These are all the system calls that devices must implement
 public interface DeviceInterface {
-	public boolean sendTo(DeviceInterface d, Message msg) throws SuspendExecution,StopException;
+	public long sendTo(DeviceInterface d, Message msg) throws SuspendExecution,StopException;
 	public Message recv() throws SuspendExecution,StopException;
 	public List<DeviceInterface> scan() throws SuspendExecution,StopException;
 	public void sleep() throws SuspendExecution,StopException;
-	public void sleep(int seconds) throws SuspendExecution,StopException;
+	public void sleep(long millaseconds) throws SuspendExecution,StopException;
 	public String getName();
 	public boolean connect(DeviceInterface d) throws SuspendExecution,StopException;
 	public boolean disconnect(DeviceInterface d);
