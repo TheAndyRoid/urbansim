@@ -16,57 +16,57 @@ public class MyAgent implements DeviceAgent {
 	private DeviceInterface device;
 	private int floodTTL = 9;
 
-	private void connect(List<DeviceInterface> inRange) throws SuspendExecution{
+	private void connect(List<DeviceInterface> inRange) throws SuspendExecution,StopException{
 		//connect to them all
 		for (DeviceInterface d : inRange) {
 			device.connect(d);
+			//System.out.println("connect");
 		}
 		
 	}
 	
 	// This method must be processor friendly. It must call sleep when it has
 	// finished processing
-	public void main() throws SuspendExecution {
+	public void main() throws SuspendExecution,StopException {
 		do {
 
-			//Remove all old connections
-			for(DeviceInterface d:device.activeConnections()){
-				device.disconnect(d);
+			//Get 
+			if(device.getMaxConnections() > device.getActiveConnections().size()){
+				// Scan for devices
+				List<DeviceInterface> inRange = device.scan();
+				connect(inRange);
 			}
 			
-			// Scan for devices
-			List<DeviceInterface> inRange = device.scan();
+			
 			
 			
 			//System.out.println(device.getName());
 
 			// send message if we are the source.
-			if (device.getName().equals("busStop@flood@34")) {
-				
-				connect(inRange);
-				
-				//System.out.println("Source");
+			if (device.getName().equals("busStop@flood@34")) {				
+				System.out.println("Source");
 				//System.out.println(device.getName());
 				Flood flood = new Flood(floodTTL, "busStop@flood@20");
 				// send to everyone we can.
-				for(DeviceInterface d:device.activeConnections()){
+				for(DeviceInterface d:device.getActiveConnections()){
 					Message msg = new Message(device, flood, d, 500);
-					device.sendTo(d, msg);
-					//System.out.println("Send Message");
+					
+					if(device.sendTo(d, msg)){
+						System.out.println("Send Message");	
+					}
+					
+				device.sleep(1);	
 				}
 			} else {
 				// System.out.println("Not Source");
 				Message rcv = device.recv();
-				//if(rcv != null){
-					connect(inRange);
-				//}
 				while(rcv != null) {	
 					
 					if (((Flood) rcv.obj).target.equals(device.getName())) {
 						// hack exit
 						System.out.println("Message            Recived");
-						//System.out.println("Message            Recived");
-						//System.out.println("Message            Recived");
+						System.out.println("Message            Recived");
+						System.out.println("Message            Recived");
 						//System.exit(0);
 					} else {
 												
@@ -79,7 +79,7 @@ public class MyAgent implements DeviceAgent {
 							//System.out.println(recvd.ttl);
 							// decrease ttl;
 							Flood tmp = new Flood(recvd.ttl--, recvd.target);
-							for (DeviceInterface d : inRange) {
+							for (DeviceInterface d : device.getActiveConnections()) {
 								if (d != rcv.src) {
 									//System.out.println("Forwarded");
 									Message msg = new Message(device, tmp, d, rcv.size);
@@ -96,7 +96,7 @@ public class MyAgent implements DeviceAgent {
 			}
 			// sleep when done
 			device.sleep();
-		} while (true);
+		} while (device.isRunning());
 	}
 
 	@Override

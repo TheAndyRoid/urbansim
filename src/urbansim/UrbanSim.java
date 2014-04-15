@@ -151,7 +151,7 @@ public class UrbanSim extends SimState implements VehicleLifecycleObserver,
 					.size()]);
 
 			// create parallel for faster processing
-			urbansim.SAgents = new ParallelSequence(agents, 8);
+			urbansim.SAgents = new ParallelSequence(agents, 4);
 
 			// Step Agents
 			urbansim.schedule.scheduleOnce(urbansim.SAgents);
@@ -213,7 +213,15 @@ public class UrbanSim extends SimState implements VehicleLifecycleObserver,
 		// Remove from arrays
 		Device tmp = mobileAgents.remove(vehicle.getID());
 		allAgents.remove(tmp);
-
+		
+		tmp.resetConnections();
+		tmp.coRun = false;
+		
+		//remove connection
+		for(Device d:allAgents){
+			d.removeConnection(tmp);
+		}
+		
 		// Remove from graphic
 		agentPos.remove(tmp);
 		connected.removeNode(tmp);
