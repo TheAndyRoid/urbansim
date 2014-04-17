@@ -25,8 +25,15 @@ public class Battery extends ToXML{
 	private double wifiDrain;
 	private double wifiScanDrain;
 	
+	private double stepTime = 1000;
 	
-	private long cpuTime = 0;
+	
+	private double cpuTime = 0;
+	private boolean cpuActive = true;
+
+	private double interfaceTime = 0;
+	private boolean interfaceActive = true;
+	
 	
 
 	
@@ -67,31 +74,133 @@ public class Battery extends ToXML{
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+		
+		
+		
+
+		
+		
+	}
+	
+	
+	
+	public void setTime(double time){
+		  cpuTime = time;
+		  cpuActive = false;
+		  interfaceTime = time;
+		  interfaceActive = false;
+	}
+	
+	
+	private double calcDrain(double agentTime,double time,double drainRate){
+		double ret  = (agentTime - time)*(drainRate/stepTime);
+		if(capacityremaining - ret < 0){
+			capacityremaining =0;
+		}else{
+			capacityremaining -= ret;
+		}
+		return ret;
 	}
 
-	// Use for cpu timing
-	public void startTimer() {
-		cpuTime = getUserTime();
+	// device start
+	public void deviceActive(double agentTime) {
+		if(maxcapacity == -1){
+			return;
+		}
+		if (cpuActive) {
+			//device was already active
+			calcDrain(agentTime,cpuTime,cpuDrain);
+		}else{			
+			//Device was asleep
+			calcDrain(agentTime,cpuTime,cpuSleepDrain);
+		}
+		//drain sleep rate till active time
+
+		cpuActive = true;
+		cpuTime = agentTime;
 	}
 
+	
+
+	
 	// cpu timing
-	public void stopTimer() {
-		//System.out.println(cpuTime);
-		long time = getUserTime() - cpuTime;
-		//System.out.println(time);
+	public void deviceSleep(double agentTime) {
+		if (maxcapacity == -1) {
+			return;
+		}
+ 		if (!cpuActive) {
+		// device is still sleeping
+			 calcDrain(agentTime,cpuTime,cpuSleepDrain);
+		}else{
+		// device was awake
+			 calcDrain(agentTime,cpuTime,cpuDrain);
+		}
+
+ 		cpuActive = false;
+		cpuTime= agentTime;
 	}
+
+	public void interfaceActive(double agentTime) {
+		if(maxcapacity == -1){
+			return;
+		}
+		if (interfaceActive) {
+			//interface already active
+			calcDrain(agentTime, cpuTime, wifiDrain);
+		} else {
+			// device was asleep
+			//no drain
+		}
+		interfaceActive = true;
+		interfaceTime = agentTime;
+
+	}
+
+	public void interfaceSleep(double agentTime) {
+		if(maxcapacity == -1){
+			return;
+		}
+		if(interfaceActive){
+			calcDrain(agentTime,interfaceTime,wifiDrain);
+		}
+		interfaceActive = false;
+		interfaceTime = agentTime;
+
+	}
+	
+	
+	public void update(double agentTime) {
+		if(maxcapacity == -1){
+			return;
+		}
+		if (cpuActive){
+			deviceActive(agentTime);
+		}else{
+			deviceSleep(agentTime);
+		}
+
+		if (interfaceActive){
+			interfaceActive(agentTime);
+		}else{
+			interfaceSleep(agentTime);
+		}
+
+	}
+	
 
 	public void wifiScan(int ms) {
 		if(maxcapacity == -1){
 			return;
 		}
-		capacityremaining = capacityremaining - (ms*wifiScanDrain);
+		double ret =  ms*(wifiScanDrain/stepTime);
+		if(capacityremaining - ret < 0){
+			capacityremaining =0;
+		}else{
+			capacityremaining -= ret;
+		}
 		//System.out.println(capacityremaining);
 	}
 	
-	public void mainloop(double ms){
-		capacityremaining = capacityremaining - (cpuDrain*ms);
-	}
 
 	public boolean hasPower() {
 		//System.out.println(capacityremaining);
@@ -102,20 +211,11 @@ public class Battery extends ToXML{
 		}
 	}
 
-	// This calculates the total drain for the simulated device.
-	// Using unacounted time as sleep cpu and the current Wireless state
-	public void calculateSleepDrain(Double ms) {
-		if(maxcapacity == -1){
-			return;
-		}
-		capacityremaining = capacityremaining - (ms*cpuSleepDrain);
+
+	public boolean isCPUSleeping(){
+		return cpuActive;
 	}
-	
-	public long getUserTime( ) {
-	    ThreadMXBean bean = ManagementFactory.getThreadMXBean( );
-	    return bean.isCurrentThreadCpuTimeSupported( ) ?
-	        bean.getCurrentThreadUserTime( ) : 0L;
-	}
+
 	
 
 	// 1 full battery 0 empty
@@ -143,9 +243,6 @@ public class Battery extends ToXML{
 			ebattery.setAttribute("capacityremaining", Double.toString(capacityremaining));
 
 			return ebattery;
-		}
-		
-		
+		}		
 	}
-
 }

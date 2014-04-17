@@ -151,7 +151,7 @@ public class UrbanSim extends SimState implements VehicleLifecycleObserver,
 					.size()]);
 
 			// create parallel for faster processing
-			urbansim.SAgents = new ParallelSequence(agents, 4);
+			urbansim.SAgents = new ParallelSequence(agents, 12);
 
 			// Step Agents
 			urbansim.schedule.scheduleOnce(urbansim.SAgents);
@@ -394,7 +394,7 @@ public class UrbanSim extends SimState implements VehicleLifecycleObserver,
 		Double2D aPos = agent.currentPosition();
 		for(Device a:allAgents){
 			if(winterface.isCompatible(a.getInterface())){
-				if(aPos.distance(a.currentPosition())<=range && a != agent && a.hasPower()){
+				if(aPos.distance(a.currentPosition())<=range && a != agent && a.hasPower() && a.interfaceActive()){
 					agentsInRange.add(a);
 				}		
 			}

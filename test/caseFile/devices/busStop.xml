@@ -2,9 +2,9 @@
 <busStop>
   <agent type="flood"/>
   <interface type='wifi'/>
-  <battery type='unlimited'/>
-  <cpusleepdrain mahs="5"/>    
-  <cpudrain mahs="5"/> 
+  <battery type='3000mah'/>
+  <cpusleepdrain mahs="1"/>    
+  <cpudrain mahs="20"/> 
   <storage type="unlimited"/>    
   <portrayal shape="rectangle" scale="8">
     <colour r="0" g="128" b="0"/>   

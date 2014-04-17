@@ -250,7 +250,8 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 		UrbanSim urbansim = (UrbanSim) simState;
 		urbansim.connected.addNode(this);
 		
-		
+		updateTime();
+		battery.setTime(agentTime);
 		
 		
 	}
@@ -335,7 +336,7 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 		if (newStartTime > startTime) {
 			//new cycle update stuff
 			
-			updateConsumables();
+			
 			
 			//Stops the gui looking bad and these would be detected by the device
 			removeDudConnections();
@@ -343,6 +344,9 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 			processSendBuffer();
 
 			startTime = newStartTime;
+			
+			updateConsumables();
+			
 			if (agentTime < startTime) {
 				agentTime = startTime;
 			}
@@ -353,19 +357,21 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 	 * Updates battery drain and resets bandwidth.
 	 */
 	private void updateConsumables() {
-		// get time
-		startTime = simState.schedule.getTime() * stepTime;
-		if (agentTime <= startTime) {
-			// calculate cpu idle time and drain battery
-			battery.calculateSleepDrain(startTime - agentTime);
-			// Reset interface bandwidth
-			
-			}
-		wirelessInterface.resetBandwidth();
-		// Reset connection bandwidth
 		
+		
+		
+			
+			
+			
+		// Reset interface bandwidth
+		wirelessInterface.resetBandwidth();
+		
+		// Reset connection bandwidth
 		resetConnectionBandwidthUI();
 		
+		
+		battery.update(startTime);
+		//calculate the battery to start time
 	}
 	
 	
@@ -379,38 +385,44 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 	 */
 	public void step(SimState state) {
 		//update time
+		
+		
+		running.lock();
+		try {
 		updateTime();
-		
-			
-		
 		if (agentTime < (startTime + stepTime) && battery.hasPower()) {
-			running.lock();
-			try {
+			
+				
 				if (co.getState() == Coroutine.State.NEW
 						|| co.getState() == Coroutine.State.SUSPENDED) {
-					battery.startTimer(); 
+					
 					
 					do {
-						double startTime = agentTime;
+						battery.deviceActive(agentTime);
 						co.run();
-						double stopTime = agentTime;
-						battery.mainloop(stopTime-startTime);
-						agentTime++;
+						if(!battery.isCPUSleeping()){
+							agentTime++;	
+						}
+						
+						
+						
+						
 					} while ((agentTime < (startTime + stepTime))
 							&& !recvBuffer.isEmpty() && coRun);
 					// update connections ui
-					 
-					battery.stopTimer(); 
+					
+					
 				}
-		} finally {
-			running.unlock();
-		}
+		
 
 			
 		}else if(battery.hasPower() == false && activeConnections.isEmpty() != true){
 			resetConnections();
 			System.out.println("                        Battery Ran OUT");
 
+		}
+		} finally {
+			running.unlock();
 		}
 		
 
@@ -882,20 +894,19 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 		
 		if (running.tryLock()) {
 			try {
-				updateTime();
-				
+				updateTime();				
 				if (msg.recvtime < (startTime + stepTime)) {
-
 					// device has time remanining.
-					if (agentTime < (startTime + stepTime)) {
+					if (agentTime < (startTime + stepTime)&& battery.hasPower()) {
 						if (co.getState() == Coroutine.State.NEW
 								|| co.getState() == Coroutine.State.SUSPENDED) {
 							// the agent has woken up to a msg set agenttime.
 							// agentTime = msg.recvtime;
-							double startTime = agentTime;
+							battery.deviceActive(agentTime);
 							co.run();
-							double stopTime = agentTime;
-							battery.mainloop(stopTime - startTime);
+							if(!battery.isCPUSleeping()){
+								agentTime++;	
+							}
 						}
 					}
 
@@ -1060,7 +1071,9 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 
 			} else if (!connectedTo(dst) || !inRange(dst)) {
 				// Error sending message not connected
+				battery.deviceSleep(agentTime);	
 				agentTime += 5;
+				battery.deviceActive(agentTime);	
 				return -1;
 			} else if (sendingMessageTo(dst)) {
 				for (Message m : sendBuffer) {
@@ -1094,6 +1107,9 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 	 */
 	public long sendTo(DeviceInterface a, Message msg) throws SuspendExecution,StopException {
 		isRunning();
+		if(wirelessInterface.isOn() == false){
+			return -1;
+		}
 		// check that a connection exists
 		long result = sendMessage(a, msg);
 		checkGotTime();
@@ -1104,6 +1120,9 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 	// Wrapper function for deviceInterface
 	public Message recv() throws SuspendExecution,StopException {
 		isRunning();
+		if(wirelessInterface.isOn() == false){
+			return null;
+		}
 		// time to receive a message
 		checkGotTime();
 		return getMessage(recvBuffer);
@@ -1140,7 +1159,12 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 	public List<DeviceInterface> scan() throws SuspendExecution,StopException {
 		isRunning();
 		// Time to perform a scan
+
+		
+		battery.deviceSleep(agentTime);	
 		agentTime += wirelessInterface.scanTime();
+		battery.deviceActive(agentTime);	
+		
 		battery.wifiScan(wirelessInterface.scanTime());
 		
 		UrbanSim urbansim = (UrbanSim) simState;
@@ -1159,10 +1183,10 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 		synchronized(simState.connection){			
 		
 			// Check the list of active connections and remove any that arn't in
-			// range.
+			// range or have run out of power
 			List<Edge> toRemove = new ArrayList<Edge>();
 			for (Edge e : activeConnections) {
-				if (!inRange((Device) e.getOtherNode(this))) {
+				if (!inRange((Device) e.getOtherNode(this)) || !((Device)e.getOtherNode(this)).hasPower()) {
 					toRemove.add(e);
 				}
 			}			
@@ -1187,6 +1211,14 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 	 */
 	public void sleep() throws SuspendExecution,StopException {
 		isRunning();
+		agentTime++;		
+		if(agentTime > (stepTime + startTime)){
+			//update to start of next simulation step only
+			battery.deviceSleep(stepTime + startTime);	
+		}else{
+			//safe to sleep
+			battery.deviceSleep(agentTime);	
+		}	
 		Coroutine.yield();
 	}
 
@@ -1196,6 +1228,14 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 	 */
 	public void sleep(long millaseconds) throws SuspendExecution,StopException {
 		isRunning();
+		agentTime++;		
+		if(agentTime + millaseconds> (stepTime + startTime)){
+			//update to start of next simulation step only
+			battery.deviceSleep(stepTime + startTime);	
+		}else{
+			//safe to sleep
+			battery.deviceSleep(agentTime);	
+		}
 		agentTime += millaseconds;
 		Coroutine.yield();
 	}
@@ -1217,7 +1257,9 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 	 */
 	public boolean connect(DeviceInterface d) throws SuspendExecution,StopException {
 		isRunning();
+		battery.deviceSleep(agentTime);	
 		agentTime += wirelessInterface.connectionTime();
+		battery.deviceActive(agentTime);	
 		checkGotTime();
 		if(addConnection((Device) d) ){
 			return true;
@@ -1315,8 +1357,6 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 		return agentElement;
 
 	}
-
-	
 	
 
 	public boolean hasPower(){
@@ -1339,6 +1379,62 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 			throw new StopException("Full Stop");
 		}
 		return coRun;
+	}
+	
+	
+	public void interfaceOn() throws SuspendExecution,StopException{
+		isRunning();
+		if(wirelessInterface.isOn() == false){
+			wirelessInterface.turnOn();
+			battery.interfaceActive(agentTime);
+			battery.deviceSleep(agentTime);	
+			agentTime += wirelessInterface.getTurnOnTime();
+			battery.deviceActive(agentTime);			
+			checkGotTime();
+		}		
+	}
+	public void interfaceOff() throws SuspendExecution,StopException{
+		isRunning();
+		if(wirelessInterface.isOn() == true){
+			wirelessInterface.turnOff();
+			battery.interfaceSleep(agentTime);
+			battery.deviceSleep(agentTime);	
+			agentTime += wirelessInterface.getTurnOffTime();
+			battery.deviceActive(agentTime);	
+			//Remove all connections
+			resetConnections();
+			//remove buffers
+			wipeBuffers();			
+			checkGotTime();			
+		}		
+	}
+	
+	private void wipeBuffers(){
+		//Remove all msgs in sending or receiving buffers
+		synchronized(sendBuffer){
+			sendBuffer.clear();
+		}
+		synchronized(recvBuffer){
+			recvBuffer.clear();
+		}
+	}
+	
+	public boolean isInterfaceActive() throws SuspendExecution,StopException{
+		isRunning();
+		return interfaceActive();		
+	}	
+	
+	public boolean interfaceActive(){
+		return wirelessInterface.isOn();
+	}
+	
+	
+	public double getBatteryRemaining() throws SuspendExecution,StopException{
+		return battery.batteryRemaining();
+	}
+	
+	public double getTime() throws SuspendExecution,StopException{
+		return agentTime;
 	}
 	
 	

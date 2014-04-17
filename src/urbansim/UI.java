@@ -13,7 +13,7 @@ public class UI implements Steppable  {
 			d.updateUI();
 		}
 		for(Device d:urbansim.allAgents){
-			d.resetConnectionBandwidthUI();
+			//d.resetConnectionBandwidthUI();
 		}
 		
 		

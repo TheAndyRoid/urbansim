@@ -16,8 +16,10 @@
     <point  meters='45' kbps='0'/>
   </bitrateAtDistance>
   <scanTime ms='100'/>
-  <drain mahs='0.08'/>
+  <drain mahs='5'/>
   <bandwidth kbps="30000"/>
-  <scanDrain mahs='0.25'/>
+  <startuptime ms="50"/>
+  <shutdowntime ms="50"/>
+  <scanDrain mahs='0'/>
 </wifi>
 

@@ -15,7 +15,8 @@ public class MyAgent implements DeviceAgent {
 
 	private DeviceInterface device;
 	private int floodTTL = 9;
-
+	private double lastTime = 0;
+	
 	private void connect(List<DeviceInterface> inRange) throws SuspendExecution,StopException{
 		//connect to them all
 		for (DeviceInterface d : inRange) {
@@ -29,6 +30,12 @@ public class MyAgent implements DeviceAgent {
 	// finished processing
 	public void main() throws SuspendExecution,StopException {
 		do {
+			//turn wireless on 
+			device.interfaceOn();
+			
+			if(lastTime == 0){
+				lastTime = device.getTime();
+			}
 
 			//Get 
 			if(device.getMaxConnections() > device.getActiveConnections().size()){
@@ -65,8 +72,14 @@ public class MyAgent implements DeviceAgent {
 						}
 					}						
 				}
-				if(minSleep != Long.MAX_VALUE){
-					device.sleep(minSleep);
+				if (minSleep != Long.MAX_VALUE) {	
+					if (device.getTime() - lastTime > 10000) {
+						device.interfaceOff();
+						lastTime = 0;
+						device.sleep(100000);
+					}else{
+						device.sleep(minSleep);
+					}
 				}
 			} else {
 				// System.out.println("Not Source");

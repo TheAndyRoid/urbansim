@@ -33,6 +33,9 @@ public class WirelessConnection extends ToXML{
 	//Maximum bandwidth that this device can serve
 	private int maxBandwidth ;
 	private int avalibleBandwidth;
+	private int startUpTime = 0;
+	private int shutdownTime = 0;
+	private boolean on = true; //start with the interface on
 	
 	
 	
@@ -107,6 +110,8 @@ public class WirelessConnection extends ToXML{
 		scanRate = Utils.readAttributeDouble("mahs",Utils.getChildElement("scanDrain",root));
 		scanTime = Utils.readAttributeInt("ms",Utils.getChildElement("scanTime",root));
 		maxBandwidth = Utils.readAttributeInt("kbps",Utils.getChildElement("bandwidth",root));
+		startUpTime = Utils.readAttributeInt("ms",Utils.getChildElement("startuptime",root));
+		shutdownTime = Utils.readAttributeInt("ms",Utils.getChildElement("shutdowntime",root));
 		avalibleBandwidth = maxBandwidth;	
 		
 		
@@ -233,13 +238,39 @@ public class WirelessConnection extends ToXML{
 	public double getDrain(){
 		return drainRate;
 	}
+	
+	public double getTurnOnTime(){
+		return startUpTime;
+	}
+	
+	public double getTurnOffTime(){
+		return startUpTime;
+	}
 		
+	
+	public  boolean isOn(){
+		synchronized(this){
+		return on;
+		}
+	}
+	public void turnOff(){
+		synchronized(this){
+		on = false;
+		}
+	}
+	public void turnOn(){
+		synchronized(this){
+		on = true;
+		}
+	}
+	
 
 	@Override
 	public Element toXML(Element root, Document doc) {
 		// create agent element
 		Element einterface = doc.createElement("interface");
 		root.appendChild(einterface);
+		einterface.setAttribute("active", Boolean.toString(on));
 		einterface.setAttribute("type", type);
 		einterface.setAttribute("maxBandwidth", Integer.toString(maxBandwidth));
 		einterface.setAttribute("avalibleBandwidth", Integer.toString(avalibleBandwidth));

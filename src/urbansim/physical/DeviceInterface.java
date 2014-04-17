@@ -22,4 +22,9 @@ public interface DeviceInterface {
 	public LongTermStorage getStorage();
 	public int getMaxConnections();
 	public boolean isRunning() throws StopException; 
+	public void interfaceOn() throws SuspendExecution,StopException;
+	public void interfaceOff() throws SuspendExecution,StopException;
+	public boolean isInterfaceActive() throws SuspendExecution,StopException;
+	public double getBatteryRemaining() throws SuspendExecution,StopException;
+	public double getTime() throws SuspendExecution,StopException;
 }
