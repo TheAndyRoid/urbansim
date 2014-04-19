@@ -321,7 +321,7 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 	public void setPosition(SimState state, Double2D newPosition) {
 		positionActual = newPosition;
 		UrbanSim urbansim = (UrbanSim) state;
-		Double2D pos = new Double2D(newPosition.getX(), newPosition.getY());
+		Double2D pos = new Double2D(newPosition.getX(), newPosition.getY()*-1);
 		urbansim.agentPos.setObjectLocation(this, pos);
 
 	}

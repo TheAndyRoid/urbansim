@@ -39,10 +39,14 @@ public class UrbanSim extends SimState implements VehicleLifecycleObserver,
 
 	}
 	// Width and height are ignored
-	private int GRID_WIDTH = 100, GRID_HEIGHT = 100;
+	//private int GRID_WIDTH = 100, GRID_HEIGHT = 100;
+	
+	
+	public double width = 500;
+	public double height = 500;
 
 	// data
-	public Continuous2D agentPos = new Continuous2D(1.0, 500, 500);
+	public Continuous2D agentPos = new Continuous2D(1.0, width, height);
 	//for displaying connection between devices
 	public Network connected = new Network(false);
 
@@ -57,6 +61,9 @@ public class UrbanSim extends SimState implements VehicleLifecycleObserver,
 	
 	//Lock for connections
 	public Lock connection = new ReentrantLock();
+	
+	
+	public String roadNetwork;
 	
 	//Configuration Options
 	private String caseDir;
@@ -328,6 +335,7 @@ public class UrbanSim extends SimState implements VehicleLifecycleObserver,
 			System.out.println(deltasPerFile);
 			
 			staticAgentFile = caseDir +"/" +Utils.readElementString("staticAgentFile",root);
+			roadNetwork = caseDir +"/" +Utils.readElementString("sumoRoadNetwork",root);
 			
 			simulationDurationSeconds= Utils.readElementInt("simulationDurationSeconds",root);
 			//stepDelta= Utils.readElementInt("stepDelta",root);	
