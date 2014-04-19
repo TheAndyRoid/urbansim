@@ -13,6 +13,7 @@ import sim.portrayal.network.SpatialNetwork2D;
 import sim.portrayal.simple.*;
 
 import java.awt.*;
+import java.awt.geom.Rectangle2D;
 import java.io.File;
 
 import javax.swing.*;
@@ -31,6 +32,10 @@ import sim.portrayal.*;
 
 public class UrbanSimWithUI extends GUIState {
 
+	
+	Double2D botLeft;
+	Double2D topRight;
+	
 	public Display2D display;
 	public JFrame displayFrame;
 	ContinuousPortrayal2D agentPortrayal = new ContinuousPortrayal2D();
@@ -61,9 +66,8 @@ public class UrbanSimWithUI extends GUIState {
 
 	public void start() {
 		UrbanSim urbanSim = (UrbanSim) state;
-		super.start();
-		roadPoints = new Continuous2D(1.0,urbanSim.width,urbanSim.height);
-		roadEdges = new Network(false);
+		super.start();	
+
 		loadRoads();
 		setupPortrayals();
 	}
@@ -90,6 +94,23 @@ public class UrbanSimWithUI extends GUIState {
 			
 			
 			
+			
+			Element location = Utils.getChildElement("location",root);
+			String convBoundary = Utils.readAttributeString("convBoundary",location);
+			String points[] = convBoundary.split(",");
+			botLeft = new Double2D(Double.parseDouble(points[0]),
+					Double.parseDouble(points[1]));
+			topRight = new Double2D(Double.parseDouble(points[2]),
+					Double.parseDouble(points[3]));
+			
+			roadPoints = new Continuous2D(1.0,urbanSim.width,urbanSim.height);
+			roadEdges = new Network(false);
+			
+
+			
+
+			
+						
 			NodeList eList = root.getElementsByTagName("edge");
 			
 			
@@ -105,12 +126,26 @@ public class UrbanSimWithUI extends GUIState {
 						Node lNode = lList.item(j);
 						if (lNode.getNodeType() == Node.ELEMENT_NODE) {
 							Element lane = (Element) lNode;
-							processLane(lane);
+							processShapeLane(lane);
 						}
 
 					}
 				}
 			}
+			
+			NodeList jList = root.getElementsByTagName("junction");
+			for (int i = 0; i < jList.getLength(); i++) {
+				Node jNode = jList.item(i);
+				if (jNode.getNodeType() == Node.ELEMENT_NODE) {
+					Element junction = (Element) jNode;
+					processShapeJunction(junction);
+				}
+			}
+			
+
+			
+			setupDisplay(controller);
+			
 			
 			System.out.println("Loaded " + urbanSim.roadNetwork);		
 
@@ -122,8 +157,8 @@ public class UrbanSimWithUI extends GUIState {
 	}
 	
 	
-	public void processLane(Element lane){
-		String shape = Utils.readAttributeString("shape",lane);
+	public void processShapeLane(Element e){
+		String shape = Utils.readAttributeString("shape",e);
 		String edges[] = shape.split("\\s+");
 		Double2D lastPos = null;
 		for (int i= 0; i < edges.length; i++) {
@@ -158,6 +193,60 @@ public class UrbanSimWithUI extends GUIState {
 				
 		}
 	}
+	
+	
+	
+	public void processShapeJunction(Element e){
+		String shape = Utils.readAttributeString("shape",e);
+		String edges[] = shape.split("\\s+");
+		Object firstObj = null;
+		Object lastObj = null;
+		Double2D lastPos = null;
+		for (int i= 0; i < edges.length; i++) {
+			String pos[] = edges[i].split(",");
+			double x = Double.parseDouble(pos[0]);
+			double y = Double.parseDouble(pos[1]);
+			Double2D pos2d = new Double2D(x, y*-1);
+			
+			//check if the point exists, otherwise add it.
+			Bag point = roadPoints.getObjectsAtLocation(pos2d);
+			Object A = null;
+			if(point == null || point.size() == 0){
+				A = pos2d;
+				roadPoints.setObjectLocation(A,pos2d);
+				System.out.println(pos2d.toString());
+			}else{
+				A  = point.get(0);
+			}
+			
+			
+			if(firstObj == null){
+				firstObj = A;
+			}
+			
+			Object B = null;
+			if (lastPos != null){
+				Bag tmp = roadPoints.getObjectsAtLocation(lastPos);
+				 B = tmp.get(0);
+				 lastPos = pos2d;
+			}else{
+				lastPos = pos2d;
+				continue;
+			}
+			
+			Edge tmp = new Edge(A,B,null);
+			roadEdges.addEdge(tmp);		
+			lastObj = A;
+				
+		}
+		
+		//close the ploygon
+		Edge tmp = new Edge(firstObj,lastObj,null);
+		roadEdges.addEdge(tmp);	
+		
+		
+	}
+	
 	
 
 	
@@ -200,20 +289,46 @@ public class UrbanSimWithUI extends GUIState {
 	}
 
 	public void init(Controller c) {
+		
 		super.init(c);
-		display = new Display2D(600, 600, this);
+		setupDisplay(c);		
+	}
+	
+	private void setupDisplay(Controller c){
+		UrbanSim urbanSim = (UrbanSim) state;
+		
+		if (displayFrame != null){
+			c.unregisterFrame(displayFrame);
+			displayFrame.dispose();
+		}
+		display = new Display2D(500, 500, this);
 		display.setClipping(false);
 		displayFrame = display.createFrame();
 		displayFrame.setTitle("Map Display");
 		c.registerFrame(displayFrame); // so the frame appears in the "Display"
 										// list
+		
+		
+		
+		Rectangle2D.Double rect = new Rectangle2D.Double(
+				0,  // translated x origin
+				display.insideDisplay.height, // translated y origin
+				display.insideDisplay.width/10, // scaled width
+				display.insideDisplay.height/10 ); // scaled height
+		
+		
+		
+		display.attach(roadPortrayal, "Roads" ,rect,true);
+		display.attach(agentPortrayal, "Devices",  rect,true);
+		display.attach( networkPortrayal, "Connections" ,rect,true);
+		
 		displayFrame.setVisible(true);
-		display.attach( roadPortrayal, "Roads" ,0,  display.insideDisplay.height, true);
 		
-		display.attach(agentPortrayal, "Devices",  0,  display.insideDisplay.height,true);
-		display.attach( networkPortrayal, "Connections" ,0,  display.insideDisplay.height, true);
-		
+		display.setClipping(false);
 	}
+	
+
+	
 
 	public void quit() {
 		super.quit();

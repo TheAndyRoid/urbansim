@@ -35,9 +35,7 @@ import urbansim.physical.WirelessConnection;
 public class UrbanSim extends SimState implements VehicleLifecycleObserver,
 		Steppable {
 
-	private void getBounds() {
-
-	}
+	
 	// Width and height are ignored
 	//private int GRID_WIDTH = 100, GRID_HEIGHT = 100;
 	
@@ -108,8 +106,8 @@ public class UrbanSim extends SimState implements VehicleLifecycleObserver,
 	public void start() {
 		super.start();
 		schedule.reset();
-
 		agentPos.clear();
+		
 		mobileAgents.clear();
 		stationaryAgents.clear();
 		allAgents.clear();
@@ -336,6 +334,9 @@ public class UrbanSim extends SimState implements VehicleLifecycleObserver,
 			
 			staticAgentFile = caseDir +"/" +Utils.readElementString("staticAgentFile",root);
 			roadNetwork = caseDir +"/" +Utils.readElementString("sumoRoadNetwork",root);
+			
+			
+			
 			
 			simulationDurationSeconds= Utils.readElementInt("simulationDurationSeconds",root);
 			//stepDelta= Utils.readElementInt("stepDelta",root);	
