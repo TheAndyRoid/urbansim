@@ -28,7 +28,7 @@ public class TraCI implements Steppable{
 		BasicConfigurator.configure();
 		
 		conn = new SumoTraciConnection(
-				"/home/andyroid/uni/cs4526/Application/test/sumo_maps/box1l/test.sumo.cfg",  // config file
+				"/home/andyroid/uni/cs4526/Application/test/caseFile/sumo/test.sumo.cfg",  // config file
 				12345                                  // random seed
 				);
 		try {

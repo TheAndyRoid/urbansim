@@ -40,11 +40,10 @@ public class UrbanSim extends SimState implements VehicleLifecycleObserver,
 	//private int GRID_WIDTH = 100, GRID_HEIGHT = 100;
 	
 	
-	public double width = 500;
-	public double height = 500;
+
 
 	// data
-	public Continuous2D agentPos = new Continuous2D(1.0, width, height);
+	public Continuous2D agentPos = new Continuous2D(1, 600, 600);
 	//for displaying connection between devices
 	public Network connected = new Network(false);
 

@@ -103,7 +103,7 @@ public class UrbanSimWithUI extends GUIState {
 			topRight = new Double2D(Double.parseDouble(points[2]),
 					Double.parseDouble(points[3]));
 			
-			roadPoints = new Continuous2D(1.0,urbanSim.width,urbanSim.height);
+			roadPoints = new Continuous2D(1,600,600);
 			roadEdges = new Network(false);
 			
 
@@ -321,6 +321,10 @@ public class UrbanSimWithUI extends GUIState {
 		display.attach(roadPortrayal, "Roads" ,rect,true);
 		display.attach(agentPortrayal, "Devices",  rect,true);
 		display.attach( networkPortrayal, "Connections" ,rect,true);
+		
+//		display.attach(roadPortrayal, "Roads" ,true);
+//		display.attach(agentPortrayal, "Devices",true);
+//		display.attach( networkPortrayal, "Connections",true);
 		
 		displayFrame.setVisible(true);
 		
