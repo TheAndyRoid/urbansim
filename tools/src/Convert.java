@@ -22,9 +22,9 @@ import org.w3c.dom.NodeList;
 
 public class Convert {
 
-	String osmFile = "/home/andyroid/uni/cs4526/Application/test/caseFile/AberdeenSmall.osm";
-	String sumoFile = "/home/andyroid/uni/cs4526/Application/test/caseFile/sumo/net.net.xml";
-	String outputFile = "/home/andyroid/uni/cs4526/Application/test/caseFile/staticAgents.xml";
+	String osmFile = "/home/andyroid/uni/cs4526/Application/test/research/aberdeenCentral.osm";
+	String sumoFile = "/home/andyroid/uni/cs4526/Application/test/research/sumo/aberdeen.net.xml";
+	String outputFile = "/home/andyroid/uni/cs4526/Application/test/research/staticAgents.xml";
 	String agentType = "busStop";
 
 	String utmZone = "30 N";
@@ -46,7 +46,7 @@ public class Convert {
 	private StreamResult result;
 	
 	//these values adjust the offset of the map as sumo appears to do something odd here.
-	private int yOffsetcorrection = -650;
+	private int yOffsetcorrection = 0;
 	private int xOffsetcorrection = 0;
 	
 

@@ -24,11 +24,10 @@ public class TraCI implements Steppable{
 	private SumoTraciConnection conn ;	
 	
 	
-	public TraCI(){	
+	public TraCI(String file){	
 		BasicConfigurator.configure();
-		
 		conn = new SumoTraciConnection(
-				"/home/andyroid/uni/cs4526/Application/test/caseFile/sumo/test.sumo.cfg",  // config file
+				file,  // config file
 				12345                                  // random seed
 				);
 		try {
@@ -57,8 +56,11 @@ public class TraCI implements Steppable{
 			e.printStackTrace();
 		}
 		
+		
 	}
 	
+	
+
 
 	
 	public void addVehicleLifecycleObserver(SimState state){

@@ -198,14 +198,23 @@ public class UrbanSimWithUI extends GUIState {
 	
 	public void processShapeJunction(Element e){
 		String shape = Utils.readAttributeString("shape",e);
+		if(shape.isEmpty()){
+			return;
+		}
 		String edges[] = shape.split("\\s+");
 		Object firstObj = null;
 		Object lastObj = null;
 		Double2D lastPos = null;
 		for (int i= 0; i < edges.length; i++) {
 			String pos[] = edges[i].split(",");
-			double x = Double.parseDouble(pos[0]);
-			double y = Double.parseDouble(pos[1]);
+			double x = 0.0;
+			double y = 0.0 ;
+			try{
+			x = Double.parseDouble(pos[0]);
+			y = Double.parseDouble(pos[1]);
+			}catch(java.lang.NumberFormatException ex){
+				System.out.println("Tried to read a non-number");
+			}
 			Double2D pos2d = new Double2D(x, y*-1);
 			
 			//check if the point exists, otherwise add it.

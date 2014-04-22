@@ -116,13 +116,13 @@ public class UrbanSim extends SimState implements VehicleLifecycleObserver,
 		}
 
 		// Read in simulation settings
-		readSimulationSettings("/home/andyroid/uni/cs4526/Application/test/caseFile/case.xml");
+		readSimulationSettings("/home/andyroid/uni/cs4526/Application/test/research/case.xml");
 
 		//Read in static agents
 		loadStaticAgent(staticAgentFile);
 		
 		// Create the motion aware stepper
-		traci = new TraCI();
+		traci = new TraCI(sumoFile);
 		traci.addVehicleLifecycleObserver(this);
 
 		// Create observer
@@ -177,8 +177,15 @@ public class UrbanSim extends SimState implements VehicleLifecycleObserver,
 		Point2D pos = new Point2D.Double();
 		
 		//TODO get vehicle type from sumo.
+		String type = null;
+		try {
+			type = vehicle.getType();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 
-		String type = new String("car");
+		 
 		
 		File dev = deviceTypes.get(type);
 		if(dev != null){
@@ -202,6 +209,9 @@ public class UrbanSim extends SimState implements VehicleLifecycleObserver,
 
 				// Add agent to all list
 				allAgents.add(tmp);
+		}else{
+			System.out.println("Sumotype: "+type+" does not have a corisponding device type");
+			
 		}
 		
 		
@@ -326,7 +336,7 @@ public class UrbanSim extends SimState implements VehicleLifecycleObserver,
 			//read in the elements
 			caseDir  = Utils.readElementString("caseDir",root);
 			saveDirectory = caseDir +"/" +Utils.readElementString("saveDirectory",root);
-			sumoFile  = Utils.readElementString("sumoFile",root);
+			sumoFile  = caseDir +"/" +Utils.readElementString("sumoFile",root);
 			sumoServer  = Utils.readElementString("sumoServer",root);
 			deltasPerFile  = Utils.readElementInt("deltasPerFile",root);
 			System.out.println(deltasPerFile);

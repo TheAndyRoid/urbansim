@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <simulation>
-  <caseDir>/home/andyroid/uni/cs4526/Application/test/caseFile</caseDir>
+  <caseDir>/home/andyroid/uni/cs4526/Application/test/research</caseDir>
   <sumoFile>sumo/test.sumo.cfg</sumoFile>
-  <sumoRoadNetwork>sumo/net.net.xml</sumoRoadNetwork>
+  <sumoRoadNetwork>sumo/aberdeen.net.xml</sumoRoadNetwork>
   <sumoServer>127.0.0.1</sumoServer>
   <staticAgentFile>staticAgents.xml</staticAgentFile>
   <deviceDir>devices</deviceDir>
