@@ -3,7 +3,9 @@ package urbansim.physical;
 
 
 import java.io.File;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -29,7 +31,8 @@ import urbansim.Utils;
 public class LongTermStorage extends ToXML{
 	private long maxSize;
 	private long currentSize;
-	TreeSet <Message> storage = new TreeSet<Message>();
+	TreeSet <Object> storage = new TreeSet<Object>();
+	Map <Object,Integer> sizes = new HashMap<Object,Integer>();
 	
 	//Read in config settings.
 	public LongTermStorage(File file){	
@@ -46,7 +49,7 @@ public class LongTermStorage extends ToXML{
 
 			Element capacitymax = Utils.getChildElement("maxcapacity", root);
 			maxSize = Utils.readAttributeInt("bits", capacitymax);
-			currentSize = maxSize;		
+			currentSize = 0;		
 
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -55,30 +58,37 @@ public class LongTermStorage extends ToXML{
 	
 	
 	
-	public boolean add(Message msg){
-		//Check that we have the storage space
-		if(hasSpaceFor(msg.size)){
-			currentSize+= msg.size;
+	public boolean add(Object obj, int size){
+		if(hasSpaceFor(size)){
+			currentSize+= size;
 
-			storage.add(msg);		
+			storage.add(obj);
+			sizes.put(obj,size);
 		
 			return true;
 		}else{
 			return false;
 		}
 	}
-	public void remove(Message msg){
+	public Object remove(Object obj){
 
-		storage.remove(msg);
-		currentSize-= msg.size;
+		storage.remove(obj);
+		currentSize-= sizes.get(obj);
+		sizes.remove(obj);
+		return obj;
 	}
-	public Message getOldest(){
+	
+	public Object[] getArray(){
+		return storage.toArray(new Object[storage.size()]);
+	}
+	
+	public Object getOldest(){
 		return storage.last();
 	}
 	public void removeOldest(){
 		storage.remove(getOldest());
 	}
-	public Message getYoungest(){
+	public Object getYoungest(){
 		return storage.first();
 	}
 	public void removeYoungest(){

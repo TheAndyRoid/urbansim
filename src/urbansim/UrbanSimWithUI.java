@@ -44,15 +44,28 @@ public class UrbanSimWithUI extends GUIState {
 	Continuous2D roadPoints;
 	Network roadEdges;
 	NetworkPortrayal2D roadPortrayal = new NetworkPortrayal2D();
+	String caseFile = null;
 
 	public static void main(String[] args) {
+		String file = null;
+		if(args[0].equals("-file")){
+			file = args[1];
+		}else{
+			System.out.println("Must supply a case file");
+			System.exit(0);
+		}
+		
+		
 
 		UrbanSimWithUI vid = new UrbanSimWithUI();
+		vid.caseFile = file;
 		Console c = new Console(vid);
 		c.setVisible(true);
 	}
 
+	
 	public UrbanSimWithUI() {
+		//caseFile = file;
 		super(new UrbanSim(System.currentTimeMillis()));
 	}
 
@@ -66,6 +79,7 @@ public class UrbanSimWithUI extends GUIState {
 
 	public void start() {
 		UrbanSim urbanSim = (UrbanSim) state;
+		urbanSim.caseFile = caseFile;
 		super.start();	
 
 		loadRoads();

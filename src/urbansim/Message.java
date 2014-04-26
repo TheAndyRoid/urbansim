@@ -52,26 +52,26 @@ public class Message extends ToXML implements Comparable<Message> {
 		receiver.setAttribute("id", Long.toString(((Device) dst).getID()));
 		emsg.appendChild(receiver);
 		
-		//call objects ToXML function if it exists
+		// call objects ToXML function if it exists
 		java.lang.reflect.Method method;
 		try {
-			 method = obj.getClass().getMethod("toXML",Element.class, Document.class);
-			 method.invoke(obj, emsg,doc );
-			} catch (SecurityException e) {
-				e.printStackTrace();
-			} catch (NoSuchMethodException e) {
-				//Object does no implements such a method, no problem continue
-			} catch (IllegalAccessException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} catch (IllegalArgumentException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} catch (InvocationTargetException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-		
+			method = obj.getClass().getMethod("toXML", Element.class,
+					Document.class);
+			method.invoke(obj, emsg, doc);
+		} catch (SecurityException e) {
+			e.printStackTrace();
+		} catch (NoSuchMethodException e) {
+			// Object does no implements such a method, no problem continue
+		} catch (IllegalAccessException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IllegalArgumentException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (InvocationTargetException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		
 		
 		return emsg;

@@ -48,6 +48,7 @@ public class UrbanSim extends SimState implements VehicleLifecycleObserver,
 	public Network connected = new Network(false);
 
 	public int numAgents = 5;
+	private int threads = 1;
 	public ParallelSequence SAgents;
 	public TraCI traci;
 	public Observer observer;
@@ -61,6 +62,9 @@ public class UrbanSim extends SimState implements VehicleLifecycleObserver,
 	
 	
 	public String roadNetwork;
+	
+	
+	public String caseFile = null;
 	
 	//Configuration Options
 	private String caseDir;
@@ -116,7 +120,7 @@ public class UrbanSim extends SimState implements VehicleLifecycleObserver,
 		}
 
 		// Read in simulation settings
-		readSimulationSettings("/home/andyroid/uni/cs4526/Application/test/research/case.xml");
+		readSimulationSettings(caseFile);
 
 		//Read in static agents
 		loadStaticAgent(staticAgentFile);
@@ -155,7 +159,7 @@ public class UrbanSim extends SimState implements VehicleLifecycleObserver,
 					.size()]);
 
 			// create parallel for faster processing
-			urbansim.SAgents = new ParallelSequence(agents, 12);
+			urbansim.SAgents = new ParallelSequence(agents, threads);
 
 			// Step Agents
 			urbansim.schedule.scheduleOnce(urbansim.SAgents);
@@ -339,6 +343,7 @@ public class UrbanSim extends SimState implements VehicleLifecycleObserver,
 			sumoFile  = caseDir +"/" +Utils.readElementString("sumoFile",root);
 			sumoServer  = Utils.readElementString("sumoServer",root);
 			deltasPerFile  = Utils.readElementInt("deltasPerFile",root);
+			threads  = Utils.readElementInt("threads",root);
 			System.out.println(deltasPerFile);
 			
 			staticAgentFile = caseDir +"/" +Utils.readElementString("staticAgentFile",root);

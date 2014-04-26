@@ -5,6 +5,7 @@ import it.polito.appeal.traci.Vehicle;
 import java.awt.Color;
 import java.io.File;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -341,9 +342,17 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 			//Stops the gui looking bad and these would be detected by the device
 			removeDudConnections();
 			
+			// Reset interface bandwidth
+			wirelessInterface.resetBandwidth();
+			
+			// Reset connection bandwidth
+			resetConnectionBandwidthUI();
+			
+			
 			processSendBuffer();
 
 			startTime = newStartTime;
+			battery.update(startTime);
 			
 			updateConsumables();
 			
@@ -363,14 +372,10 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 			
 			
 			
-		// Reset interface bandwidth
-		wirelessInterface.resetBandwidth();
-		
-		// Reset connection bandwidth
-		resetConnectionBandwidthUI();
 		
 		
-		battery.update(startTime);
+		
+		
 		//calculate the battery to start time
 	}
 	
@@ -389,42 +394,34 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 		
 		running.lock();
 		try {
-		updateTime();
-		if (agentTime < (startTime + stepTime) && battery.hasPower()) {
-			
-				
+			updateTime();
+			if (agentTime < (startTime + stepTime) && battery.hasPower()) {
+
 				if (co.getState() == Coroutine.State.NEW
 						|| co.getState() == Coroutine.State.SUSPENDED) {
-					
-					
+
 					do {
 						battery.deviceActive(agentTime);
 						co.run();
-						if(!battery.isCPUSleeping()){
-							agentTime++;	
+						if (!battery.isCPUSleeping()) {
+							agentTime++;
 						}
-						
-						
-						
-						
+
 					} while ((agentTime < (startTime + stepTime))
 							&& !recvBuffer.isEmpty() && coRun);
 					// update connections ui
-					
-					
+
 				}
-		
 
-			
-		}else if(battery.hasPower() == false && activeConnections.isEmpty() != true){
-			resetConnections();
-			System.out.println("                        Battery Ran OUT");
+			} else if (battery.hasPower() == false
+					&& activeConnections.isEmpty() != true) {
+				resetConnections();
+				System.out.println("                        Battery Ran OUT");
 
-		}
+			}
 		} finally {
 			running.unlock();
 		}
-		
 
 	}
 
@@ -503,6 +500,24 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 			e.printStackTrace();
 		}
 
+		
+		//Create storage
+		
+				storage = new LongTermStorage(storageFile);
+				
+				// Create Interface
+
+				wirelessInterface = new WirelessConnection(deviceInterface);
+				
+				//Create Battery
+				battery = new Battery(deviceBattery,
+							cpuDrain,
+							cpusleepDrain,
+								wirelessInterface.getScanDrain(),
+								wirelessInterface.getDrain());
+		
+		
+		
 		// Create agent
 		try {
 			DocumentBuilderFactory dbFactory = DocumentBuilderFactory
@@ -541,20 +556,7 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 		}
 
 		
-		//Create storage
 		
-		storage = new LongTermStorage(storageFile);
-		
-		// Create Interface
-
-		wirelessInterface = new WirelessConnection(deviceInterface);
-		
-		//Create Battery
-		battery = new Battery(deviceBattery,
-					cpuDrain,
-					cpusleepDrain,
-						wirelessInterface.getScanDrain(),
-						wirelessInterface.getDrain());
 		
 		// System.out.println(wirelessInterface.connectionTime());
 
@@ -1335,6 +1337,29 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 		//Log battery
 		battery.toXML(agentElement,doc);
 		wirelessInterface.toXML(agentElement,doc);
+		
+			
+		
+		// call objects ToXML function if it exists
+		java.lang.reflect.Method method;
+		try {
+			method = userAgent.getClass().getMethod("toXML", Element.class,
+					Document.class);
+			method.invoke(userAgent, agentElement, doc);
+		} catch (SecurityException e) {
+			e.printStackTrace();
+		} catch (NoSuchMethodException e) {
+			// Object does no implements such a method, no problem continue
+		} catch (IllegalAccessException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IllegalArgumentException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (InvocationTargetException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		
 		
 		agentElement.appendChild(position);
