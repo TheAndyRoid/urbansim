@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<Simulation>
+  <agent deviceType="busStop" id="0">
+    <position x="1320.89" y="938.44"/>
+  </agent>
+  <agent deviceType="busStop" id="1">
+    <position x="1114.89" y="579.44"/>
+  </agent>
+  <agent deviceType="busStop" id="2">
+    <position x="1133.89" y="587.44"/>
+  </agent>
+  <agent deviceType="busStop" id="3">
+    <position x="1153.89" y="598.44"/>
+  </agent>
+  <agent deviceType="busStop" id="4">
+    <position x="1266.89" y="657.44"/>
+  </agent>
+  <agent deviceType="busStop" id="5">
+    <position x="1287.89" y="667.44"/>
+  </agent>
+  <agent deviceType="busStop" id="6">
+    <position x="1418.89" y="738.44"/>
+  </agent>
+  <agent deviceType="busStop" id="7">
+    <position x="1440.89" y="749.44"/>
+  </agent>
+  <agent deviceType="busStop" id="8">
+    <position x="1608.89" y="842.44"/>
+  </agent>
+  <agent deviceType="busStop" id="9">
+    <position x="1642.89" y="869.44"/>
+  </agent>
+  <agent deviceType="busStop" id="10">
+    <position x="1823.89" y="677.44"/>
+  </agent>
+  <agent deviceType="busStop" id="11">
+    <position x="1810.89" y="1124.44"/>
+  </agent>
+  <agent deviceType="busStop" id="12">
+    <position x="1841.89" y="964.44"/>
+  </agent>
+  <agent deviceType="busStop" id="13">
+    <position x="2004.89" y="1166.44"/>
+  </agent>
+  <agent deviceType="busStop" id="14">
+    <position x="1421.89" y="626.44"/>
+  </agent>
+  <agent deviceType="busStop" id="15">
+    <position x="1462.89" y="600.44"/>
+  </agent>
+  <agent deviceType="busStop" id="16">
+    <position x="1376.89" y="1137.44"/>
+  </agent>
+  <agent deviceType="busStop" id="17">
+    <position x="1379.89" y="1238.44"/>
+  </agent>
+  <agent deviceType="busStop" id="18">
+    <position x="1322.89" y="986.44"/>
+  </agent>
+  <agent deviceType="busStop" id="19">
+    <position x="1361.89" y="1029.44"/>
+  </agent>
+  <agent deviceType="busStop" id="20">
+    <position x="1195.89" y="1268.44"/>
+  </agent>
+  <agent deviceType="busStop" id="21">
+    <position x="1538.89" y="379.44"/>
+  </agent>
+</Simulation>

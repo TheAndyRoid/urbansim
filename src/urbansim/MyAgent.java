@@ -20,11 +20,13 @@ public class MyAgent extends ToXML  implements DeviceAgent {
 	private DeviceInterface device;
 	private int floodTTL = 9;
 	private double lastTime = 0;
-	private boolean satisfaction = false;
+	private boolean satisfaction; 
 	private LongTermStorage storage;
 	//no one has the file by default
 	private boolean hasFile = false;
 	private double timeBetweenReq = 5000;
+	private double delayforFile = 0;
+	private int requestsize = 10;
 	
 	private void connect(List<DeviceInterface> inRange) throws SuspendExecution,StopException{
 		//connect to them all
@@ -64,6 +66,13 @@ public class MyAgent extends ToXML  implements DeviceAgent {
 				lastTime = device.getTime();
 			}
 
+			
+			if(device.getTime()>delayforFile && delayforFile != 0){
+				hasFile = true;
+				satisfaction = true;
+			}
+			
+			
 			// Attempt to have the maximum number of connections at all times.
 			if (device.getMaxConnections() > device.getActiveConnections()
 					.size()) {
@@ -84,12 +93,12 @@ public class MyAgent extends ToXML  implements DeviceAgent {
 					
 					// System.out.println(device.getName());
 					Flood flood = new Flood(floodTTL, device.getName(), null);
-					Message msg = new Message(device, flood, d, 500);
+					Message msg = new Message(device, flood, d, requestsize);
 					long ret = device.sendTo(d, msg);
 					if (ret == 0) {
 						System.out.println("Send Message");
 					} else if (ret == -1) {
-						System.out.println("Nonrecoverable Error");
+						System.out.println("Send Error");
 					} else if (ret > 0) {
 //						System.out
 //								.println("Already sending a message must wait "
@@ -126,7 +135,7 @@ public class MyAgent extends ToXML  implements DeviceAgent {
 							Flood tmp = new Flood(floodTTL, flood.target,
 									(String)storage.getYoungest());
 							Message msg = new Message(device, tmp, rcv.src,
-									rcv.size);
+									((String)storage.getYoungest()).length());
 							// Send the data back to the person that we got the
 							// request from
 							long ret = device.sendTo(rcv.src, msg);
@@ -134,8 +143,9 @@ public class MyAgent extends ToXML  implements DeviceAgent {
 						
 					}else {
 						// forward the message
-						flood.ttl--;
+						
 						if (flood.ttl > 0) {
+							flood.ttl--;
 							for (DeviceInterface d : device
 									.getActiveConnections()) {
 								if (d != rcv.src) {
@@ -155,20 +165,25 @@ public class MyAgent extends ToXML  implements DeviceAgent {
 			}
 
 			// sleep when done
-			device.sleep();
+			device.sleep(100);
 		} while (device.isRunning());
 	}
 
-	//This is run before main so that values can be read in from files if required.
+	//This is run before main so that values can be read in from files if required. 
+	//It also supplies access to the underlying device through the device interface
 	public void constructor(DeviceInterface device, Element generic, Element agentSpecific) {
 		this.device = device;
 		storage = device.getStorage();
 		if(agentSpecific != null){
 			System.out.println(device.getName() + " got agent specific data");
-			hasFile = true;
-			String data = new String("cookies");
+			delayforFile = 900000; //15 mins in ms
+			
+			String data = new String("Pneumonoultramicroscopicsilicovolcanoconiosis  is a lung disease caused by inhaling very fine ash and sand dust");
 			storage.add(data, data.length());
-			satisfaction = true;
+			hasFile = false;
+			satisfaction = false;
+		}else{
+			satisfaction = false;
 		}
 		
 	}

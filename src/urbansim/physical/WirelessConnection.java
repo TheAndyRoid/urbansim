@@ -57,10 +57,13 @@ public class WirelessConnection extends ToXML{
 	
 	
 	
-	public void commitBandwidth(int bandwidth){
+	public int commitBandwidth(int bandwidth){
 		synchronized(this){
-		avalibleBandwidth -= requestBandwidth(bandwidth);
+		int ret = requestBandwidth(bandwidth);
+		avalibleBandwidth -= ret;
+		return ret;
 		}
+		
 	}
 	
 	
@@ -244,7 +247,7 @@ public class WirelessConnection extends ToXML{
 	}
 	
 	public double getTurnOffTime(){
-		return startUpTime;
+		return shutdownTime;
 	}
 		
 	

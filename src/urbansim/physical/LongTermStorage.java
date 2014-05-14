@@ -7,6 +7,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.PriorityQueue;
@@ -31,7 +32,7 @@ import urbansim.Utils;
 public class LongTermStorage extends ToXML{
 	private long maxSize;
 	private long currentSize;
-	TreeSet <Object> storage = new TreeSet<Object>();
+	LinkedList <Object> storage = new LinkedList<Object>();
 	Map <Object,Integer> sizes = new HashMap<Object,Integer>();
 	
 	//Read in config settings.
@@ -70,12 +71,15 @@ public class LongTermStorage extends ToXML{
 			return false;
 		}
 	}
-	public Object remove(Object obj){
+	public boolean remove(Object obj){
 
-		storage.remove(obj);
+		if(storage.remove(obj)){
 		currentSize-= sizes.get(obj);
 		sizes.remove(obj);
-		return obj;
+		return true;
+		}else{
+		return false;
+		}
 	}
 	
 	public Object[] getArray(){
@@ -83,13 +87,13 @@ public class LongTermStorage extends ToXML{
 	}
 	
 	public Object getOldest(){
-		return storage.last();
+		return storage.getFirst();
 	}
 	public void removeOldest(){
 		storage.remove(getOldest());
 	}
 	public Object getYoungest(){
-		return storage.first();
+		return storage.getLast();
 	}
 	public void removeYoungest(){
 		storage.remove(getYoungest());
@@ -103,7 +107,8 @@ public class LongTermStorage extends ToXML{
 	 }
 	}
 	public long maxSize(){
-		return maxSize;
+		long ret = maxSize;
+		return ret;
 	}
 
 

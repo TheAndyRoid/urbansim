@@ -2,7 +2,10 @@ package urbansim;
 
 import java.awt.geom.Point2D;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map.Entry;
 
 import it.polito.appeal.traci.MultiQuery;
@@ -81,36 +84,51 @@ public class TraCI implements Steppable{
 		}
 		//update mobile positions here
 		
-		MultiQuery mq = conn.makeMultiQuery();
-		for(Entry<String, Device> entry: urbansim.mobileAgents.entrySet()){
-			Device tmp = entry.getValue();
-			mq.add(tmp.v.queryReadPosition());	
-		}
-		try {
-			mq.run();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		System.out.println("Multiquery done!");
 		
-		for(Entry<String, Device> entry: urbansim.mobileAgents.entrySet()){
-			Device tmp = entry.getValue();
-			
-			Point2D pos = new Point2D.Double();
-			try {
-				 	pos= tmp.v.getPosition();
-			} catch (IOException e) {
-				e.printStackTrace();
-			}				
-			
-			tmp.setPosition(urbansim,
-					new Double2D(
-							pos.getX(),
-							pos.getY()
-							)						
-					)	;
+		//convert map to list		
+		List<Device> allMobile = new ArrayList<Device>(urbansim.mobileAgents.values());
+		
+		
+		//Split mobile agents into lists of 200		
+		int partitionSize = 200;
+		
+		List<List<Device>> partitions = new LinkedList<List<Device>>();
+		for (int i = 0; i < allMobile.size(); i += partitionSize) {
+			partitions.add(allMobile.subList(i,
+					i + Math.min(partitionSize, allMobile.size() - i)));
 		}
+
+		for (List<Device> part : partitions) {
+
+			MultiQuery mq = conn.makeMultiQuery();
+			for (Device d : part) {
+				Device tmp = d;
+				mq.add(tmp.v.queryReadPosition());
+			}
+			try {
+				mq.run();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			System.out.println("Multiquery done!");
+
+			for (Device d : part) {
+				Device tmp = d;
+
+				Point2D pos = new Point2D.Double();
+				try {
+					pos = tmp.v.getPosition();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+
+				tmp.setPosition(urbansim, new Double2D(pos.getX(), pos.getY()));
+			}
+
+		}
+		
+		
 		System.out.println("Updating Positions done!");
 				
 	}

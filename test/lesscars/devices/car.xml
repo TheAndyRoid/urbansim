@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<car>
+  <agent type="flood"/>
+  <interface type='wifi'/>
+  <battery type='3000mah'/> 
+  <cpusleepdrain mahs="0.01"/>    
+  <cpudrain mahs="0.5"/>   
+  <storage type="5000"/> 
+    <portrayal shape="circle" scale="10">
+    <colour r="255" g="0" b="0"/>   
+  </portrayal>
+</car>
+

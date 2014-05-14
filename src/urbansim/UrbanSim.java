@@ -69,7 +69,7 @@ public class UrbanSim extends SimState implements VehicleLifecycleObserver,
 	//Configuration Options
 	private String caseDir;
 	private String sumoFile;
-	private String sumoServer;
+	
 	private String staticAgentFile;
 	
 	private String agentTypeDir;
@@ -89,7 +89,6 @@ public class UrbanSim extends SimState implements VehicleLifecycleObserver,
 	private Map<String,Long> id = new HashMap<String,Long>();
 	
 	private String saveDirectory;
-	private int simulationDurationSeconds;
 	private int deltasPerFile;
 	private long nextAgentID = 0;	
 	
@@ -114,6 +113,20 @@ public class UrbanSim extends SimState implements VehicleLifecycleObserver,
 		mobileAgents.clear();
 		stationaryAgents.clear();
 		allAgents.clear();
+		// clear loaded tyes
+		agentTypes.clear();
+		interfaceTypes.clear();
+		deviceTypes.clear();
+		agentData.clear();
+		batteryTypes.clear();
+		storageTypes.clear();
+		
+		
+		
+		
+		
+		
+		
 		if (traci != null) {
 			traci.close();
 			System.out.println("Close");
@@ -230,6 +243,7 @@ public class UrbanSim extends SimState implements VehicleLifecycleObserver,
 		System.out.println("dead Vehicle");
 		// Remove from arrays
 		Device tmp = mobileAgents.remove(vehicle.getID());
+		if(tmp != null){
 		allAgents.remove(tmp);
 		
 		tmp.resetConnections();
@@ -243,17 +257,28 @@ public class UrbanSim extends SimState implements VehicleLifecycleObserver,
 		// Remove from graphic
 		agentPos.remove(tmp);
 		connected.removeNode(tmp);
+		}
 		
 
 	}
 
 	@Override
+	//This is caused by a bad road simulation. ie cars become gridlocked, so they are teleported 
+	// It's a rare event, but looks bad and is not realistic.
+	// it's safer to Destroy the vehicle
 	public void vehicleTeleportStarting(Vehicle vehicle) {
-		// TODO Auto-generated method stub
+		System.out.println("                      Teleported Vehicle");
+		//destroy it
+		vehicleArrived(vehicle);
+
+	
+		
+
 	}
 
 	@Override
 	public void vehicleTeleportEnding(Vehicle vehicle) {
+			
 		// TODO Auto-generated method stub
 
 	}
@@ -337,31 +362,35 @@ public class UrbanSim extends SimState implements VehicleLifecycleObserver,
 
 			Element root = doc.getDocumentElement();
 
+			
+			String absolutePath = fXmlFile.getAbsolutePath();
+			String filePathdir = absolutePath.substring(0,absolutePath.lastIndexOf(File.separator));
+			
 			//read in the elements
-			caseDir  = Utils.readElementString("caseDir",root);
-			saveDirectory = caseDir +"/" +Utils.readElementString("saveDirectory",root);
-			sumoFile  = caseDir +"/" +Utils.readElementString("sumoFile",root);
-			sumoServer  = Utils.readElementString("sumoServer",root);
+			
+			saveDirectory = filePathdir +Utils.readElementString("saveDirectory",root);
+			sumoFile  = filePathdir +Utils.readElementString("sumoFile",root);
+			
 			deltasPerFile  = Utils.readElementInt("deltasPerFile",root);
 			threads  = Utils.readElementInt("threads",root);
 			System.out.println(deltasPerFile);
 			
-			staticAgentFile = caseDir +"/" +Utils.readElementString("staticAgentFile",root);
-			roadNetwork = caseDir +"/" +Utils.readElementString("sumoRoadNetwork",root);
+			staticAgentFile = filePathdir +Utils.readElementString("staticAgentFile",root);
+			roadNetwork = filePathdir +Utils.readElementString("sumoRoadNetwork",root);
 			
 			
 			
 			
-			simulationDurationSeconds= Utils.readElementInt("simulationDurationSeconds",root);
+
 			//stepDelta= Utils.readElementInt("stepDelta",root);	
 			
 			//Load the directories
-			agentTypeDir = caseDir +"/" +Utils.readElementString("agentDir",root);
-			deviceTypeDir = caseDir +"/" +Utils.readElementString("deviceDir",root);
-			interfaceTypeDir = caseDir +"/" +Utils.readElementString("interfaceDir",root);
-			agentDataDir = caseDir +"/" +Utils.readElementString("agentDataDir",root);
-			batteryTypeDir = caseDir +"/" +Utils.readElementString("batteryDir",root);
-			storageTypeDir = caseDir +"/" +Utils.readElementString("storageDir",root);
+			agentTypeDir = filePathdir +Utils.readElementString("agentDir",root);
+			deviceTypeDir = filePathdir +Utils.readElementString("deviceDir",root);
+			interfaceTypeDir = filePathdir +Utils.readElementString("interfaceDir",root);
+			agentDataDir = filePathdir +Utils.readElementString("agentDataDir",root);
+			batteryTypeDir = filePathdir +Utils.readElementString("batteryDir",root);
+			storageTypeDir = filePathdir +Utils.readElementString("storageDir",root);
 			
 			//Read agent types
 			readTypes(agentTypes,agentTypeDir);	

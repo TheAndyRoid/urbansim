@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<Simulation>
+  <agent deviceType="busStop" id="0">
+    <position x="1320.89" y="938.44"/>
+  </agent>
+
+  <agent deviceType="busStop" id="2">
+    <position x="1133.89" y="587.44"/>
+  </agent>
+
+  <agent deviceType="busStop" id="4">
+    <position x="1266.89" y="657.44"/>
+  </agent>
+
+  <agent deviceType="busStop" id="6">
+    <position x="1418.89" y="738.44"/>
+  </agent>
+
+  <agent deviceType="busStop" id="8">
+    <position x="1608.89" y="842.44"/>
+  </agent>
+
+  <agent deviceType="busStop" id="10">
+    <position x="1823.89" y="677.44"/>
+  </agent>
+
+  <agent deviceType="busStop" id="12">
+    <position x="1841.89" y="964.44"/>
+  </agent>
+
+  <agent deviceType="busStop" id="14">
+    <position x="1421.89" y="626.44"/>
+  </agent>
+
+  <agent deviceType="busStop" id="16">
+    <position x="1376.89" y="1137.44"/>
+  </agent>
+
+  <agent deviceType="busStop" id="18">
+    <position x="1322.89" y="986.44"/>
+  </agent>
+
+  <agent deviceType="busStop" id="20">
+    <position x="1195.89" y="1268.44"/>
+  </agent>
+
+</Simulation>

@@ -13,7 +13,6 @@ public interface DeviceInterface {
 	public long sendTo(DeviceInterface d, Message msg) throws SuspendExecution,StopException;
 	public Message recv() throws SuspendExecution,StopException;
 	public List<DeviceInterface> scan() throws SuspendExecution,StopException;
-	public void sleep() throws SuspendExecution,StopException;
 	public void sleep(long millaseconds) throws SuspendExecution,StopException;
 	public String getName();
 	public boolean connect(DeviceInterface d) throws SuspendExecution,StopException;

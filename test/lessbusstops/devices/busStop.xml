@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<busStop>
+  <agent type="flood"/>
+  <interface type='wifi'/>
+  <battery type='unlimited'/>
+  <cpusleepdrain mahs="1"/>    
+  <cpudrain mahs="20"/> 
+  <storage type="5000"/>    
+  <portrayal shape="rectangle" scale="15">
+    <colour r="0" g="128" b="0"/>   
+  </portrayal>
+</busStop>
+

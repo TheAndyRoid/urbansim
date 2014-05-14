@@ -1,0 +1,266 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<Simulation>
+  <Step id="10.0">
+    <agent agentType="flood" devicetype="busStop" id="0">
+      <battery maxcapacity="-1"/>
+      <interface active="true" avalibleBandwidth="30000" maxBandwidth="30000" type="wifi"/>
+      <storage currentSize="0" freeSpace="5000" maxSize="5000"/>
+      <userAgent satisfied="false"/>
+      <position x="1320.89" y="938.44"/>
+      <Sent/>
+      <Recv/>
+    </agent>
+    <agent agentType="flood" devicetype="busStop" id="1">
+      <battery maxcapacity="-1"/>
+      <interface active="true" avalibleBandwidth="29900" maxBandwidth="30000" type="wifi"/>
+      <storage currentSize="0" freeSpace="5000" maxSize="5000"/>
+      <userAgent satisfied="false"/>
+      <position x="1114.89" y="579.44"/>
+      <Sent/>
+      <Recv/>
+    </agent>
+    <agent agentType="flood" devicetype="busStop" id="2">
+      <battery maxcapacity="-1"/>
+      <interface active="true" avalibleBandwidth="29800" maxBandwidth="30000" type="wifi"/>
+      <storage currentSize="0" freeSpace="5000" maxSize="5000"/>
+      <userAgent satisfied="false"/>
+      <position x="1133.89" y="587.44"/>
+      <Sent/>
+      <Recv/>
+    </agent>
+    <agent agentType="flood" devicetype="busStop" id="3">
+      <battery maxcapacity="-1"/>
+      <interface active="true" avalibleBandwidth="29910" maxBandwidth="30000" type="wifi"/>
+      <storage currentSize="0" freeSpace="5000" maxSize="5000"/>
+      <userAgent satisfied="false"/>
+      <position x="1153.89" y="598.44"/>
+      <Sent/>
+      <Recv/>
+    </agent>
+    <agent agentType="flood" devicetype="busStop" id="4">
+      <battery maxcapacity="-1"/>
+      <interface active="true" avalibleBandwidth="29900" maxBandwidth="30000" type="wifi"/>
+      <storage currentSize="0" freeSpace="5000" maxSize="5000"/>
+      <userAgent satisfied="false"/>
+      <position x="1266.89" y="657.44"/>
+      <Sent/>
+      <Recv/>
+    </agent>
+    <agent agentType="flood" devicetype="busStop" id="5">
+      <battery maxcapacity="-1"/>
+      <interface active="true" avalibleBandwidth="29910" maxBandwidth="30000" type="wifi"/>
+      <storage currentSize="0" freeSpace="5000" maxSize="5000"/>
+      <userAgent satisfied="false"/>
+      <position x="1287.89" y="667.44"/>
+      <Sent/>
+      <Recv/>
+    </agent>
+    <agent agentType="flood" devicetype="busStop" id="6">
+      <battery maxcapacity="-1"/>
+      <interface active="true" avalibleBandwidth="29900" maxBandwidth="30000" type="wifi"/>
+      <storage currentSize="0" freeSpace="5000" maxSize="5000"/>
+      <userAgent satisfied="false"/>
+      <position x="1418.89" y="738.44"/>
+      <Sent/>
+      <Recv/>
+    </agent>
+    <agent agentType="flood" devicetype="busStop" id="7">
+      <battery maxcapacity="-1"/>
+      <interface active="true" avalibleBandwidth="29910" maxBandwidth="30000" type="wifi"/>
+      <storage currentSize="0" freeSpace="5000" maxSize="5000"/>
+      <userAgent satisfied="false"/>
+      <position x="1440.89" y="749.44"/>
+      <Sent/>
+      <Recv/>
+    </agent>
+    <agent agentType="flood" devicetype="busStop" id="8">
+      <battery maxcapacity="-1"/>
+      <interface active="true" avalibleBandwidth="30000" maxBandwidth="30000" type="wifi"/>
+      <storage currentSize="0" freeSpace="5000" maxSize="5000"/>
+      <userAgent satisfied="false"/>
+      <position x="1608.89" y="842.44"/>
+      <Sent/>
+      <Recv/>
+    </agent>
+    <agent agentType="flood" devicetype="busStop" id="9">
+      <battery maxcapacity="-1"/>
+      <interface active="true" avalibleBandwidth="30000" maxBandwidth="30000" type="wifi"/>
+      <storage currentSize="0" freeSpace="5000" maxSize="5000"/>
+      <userAgent satisfied="false"/>
+      <position x="1642.89" y="869.44"/>
+      <Sent/>
+      <Recv/>
+    </agent>
+    <agent agentType="flood" devicetype="busStop" id="10">
+      <battery maxcapacity="-1"/>
+      <interface active="true" avalibleBandwidth="30000" maxBandwidth="30000" type="wifi"/>
+      <storage currentSize="0" freeSpace="5000" maxSize="5000"/>
+      <userAgent satisfied="false"/>
+      <position x="1823.89" y="677.44"/>
+      <Sent/>
+      <Recv/>
+    </agent>
+    <agent agentType="flood" devicetype="busStop" id="11">
+      <battery maxcapacity="-1"/>
+      <interface active="true" avalibleBandwidth="30000" maxBandwidth="30000" type="wifi"/>
+      <storage currentSize="0" freeSpace="5000" maxSize="5000"/>
+      <userAgent satisfied="false"/>
+      <position x="1810.89" y="1124.44"/>
+      <Sent/>
+      <Recv/>
+    </agent>
+    <agent agentType="flood" devicetype="busStop" id="12">
+      <battery maxcapacity="-1"/>
+      <interface active="true" avalibleBandwidth="30000" maxBandwidth="30000" type="wifi"/>
+      <storage currentSize="0" freeSpace="5000" maxSize="5000"/>
+      <userAgent satisfied="false"/>
+      <position x="1841.89" y="964.44"/>
+      <Sent/>
+      <Recv/>
+    </agent>
+    <agent agentType="flood" devicetype="busStop" id="13">
+      <battery maxcapacity="-1"/>
+      <interface active="true" avalibleBandwidth="30000" maxBandwidth="30000" type="wifi"/>
+      <storage currentSize="0" freeSpace="5000" maxSize="5000"/>
+      <userAgent satisfied="false"/>
+      <position x="2004.89" y="1166.44"/>
+      <Sent/>
+      <Recv/>
+    </agent>
+    <agent agentType="flood" devicetype="busStop" id="14">
+      <battery maxcapacity="-1"/>
+      <interface active="true" avalibleBandwidth="30000" maxBandwidth="30000" type="wifi"/>
+      <storage currentSize="111" freeSpace="4889" maxSize="5000"/>
+      <userAgent satisfied="false"/>
+      <position x="1421.89" y="626.44"/>
+      <Sent/>
+      <Recv/>
+    </agent>
+    <agent agentType="flood" devicetype="busStop" id="15">
+      <battery maxcapacity="-1"/>
+      <interface active="true" avalibleBandwidth="30000" maxBandwidth="30000" type="wifi"/>
+      <storage currentSize="0" freeSpace="5000" maxSize="5000"/>
+      <userAgent satisfied="false"/>
+      <position x="1462.89" y="600.44"/>
+      <Sent/>
+      <Recv/>
+    </agent>
+    <agent agentType="flood" devicetype="busStop" id="16">
+      <battery maxcapacity="-1"/>
+      <interface active="true" avalibleBandwidth="30000" maxBandwidth="30000" type="wifi"/>
+      <storage currentSize="0" freeSpace="5000" maxSize="5000"/>
+      <userAgent satisfied="false"/>
+      <position x="1376.89" y="1137.44"/>
+      <Sent/>
+      <Recv/>
+    </agent>
+    <agent agentType="flood" devicetype="busStop" id="17">
+      <battery maxcapacity="-1"/>
+      <interface active="true" avalibleBandwidth="30000" maxBandwidth="30000" type="wifi"/>
+      <storage currentSize="0" freeSpace="5000" maxSize="5000"/>
+      <userAgent satisfied="false"/>
+      <position x="1379.89" y="1238.44"/>
+      <Sent/>
+      <Recv/>
+    </agent>
+    <agent agentType="flood" devicetype="busStop" id="18">
+      <battery maxcapacity="-1"/>
+      <interface active="true" avalibleBandwidth="30000" maxBandwidth="30000" type="wifi"/>
+      <storage currentSize="0" freeSpace="5000" maxSize="5000"/>
+      <userAgent satisfied="false"/>
+      <position x="1322.89" y="986.44"/>
+      <Sent/>
+      <Recv/>
+    </agent>
+    <agent agentType="flood" devicetype="busStop" id="19">
+      <battery maxcapacity="-1"/>
+      <interface active="true" avalibleBandwidth="30000" maxBandwidth="30000" type="wifi"/>
+      <storage currentSize="0" freeSpace="5000" maxSize="5000"/>
+      <userAgent satisfied="false"/>
+      <position x="1361.89" y="1029.44"/>
+      <Sent/>
+      <Recv/>
+    </agent>
+    <agent agentType="flood" devicetype="busStop" id="20">
+      <battery maxcapacity="-1"/>
+      <interface active="true" avalibleBandwidth="30000" maxBandwidth="30000" type="wifi"/>
+      <storage currentSize="0" freeSpace="5000" maxSize="5000"/>
+      <userAgent satisfied="false"/>
+      <position x="1195.89" y="1268.44"/>
+      <Sent/>
+      <Recv/>
+    </agent>
+    <agent agentType="flood" devicetype="busStop" id="21">
+      <battery maxcapacity="-1"/>
+      <interface active="true" avalibleBandwidth="30000" maxBandwidth="30000" type="wifi"/>
+      <storage currentSize="0" freeSpace="5000" maxSize="5000"/>
+      <userAgent satisfied="false"/>
+      <position x="1538.89" y="379.44"/>
+      <Sent/>
+      <Recv/>
+    </agent>
+    <agent agentType="flood" devicetype="bus" id="0">
+      <battery maxcapacity="-1"/>
+      <interface active="true" avalibleBandwidth="30000" maxBandwidth="30000" type="wifi"/>
+      <storage currentSize="0" freeSpace="5000" maxSize="5000"/>
+      <userAgent satisfied="false"/>
+      <position x="1656.1670572265978" y="1298.7705879351995"/>
+      <Sent/>
+      <Recv/>
+    </agent>
+    <agent agentType="flood" devicetype="bus" id="1">
+      <battery maxcapacity="-1"/>
+      <interface active="true" avalibleBandwidth="30000" maxBandwidth="30000" type="wifi"/>
+      <storage currentSize="0" freeSpace="5000" maxSize="5000"/>
+      <userAgent satisfied="false"/>
+      <position x="1725.0702293740487" y="1285.596457823989"/>
+      <Sent/>
+      <Recv/>
+    </agent>
+    <agent agentType="flood" devicetype="car" id="2">
+      <battery capacityremaining="2997.0" maxcapacity="3000"/>
+      <interface active="true" avalibleBandwidth="30000" maxBandwidth="30000" type="wifi"/>
+      <storage currentSize="0" freeSpace="5000" maxSize="5000"/>
+      <userAgent satisfied="false"/>
+      <position x="985.8159713015607" y="1144.124069587324"/>
+      <Sent/>
+      <Recv/>
+    </agent>
+    <agent agentType="flood" devicetype="car" id="3">
+      <battery capacityremaining="2996.5" maxcapacity="3000"/>
+      <interface active="true" avalibleBandwidth="30000" maxBandwidth="30000" type="wifi"/>
+      <storage currentSize="0" freeSpace="5000" maxSize="5000"/>
+      <userAgent satisfied="false"/>
+      <position x="999.4914161309965" y="865.6787787086389"/>
+      <Sent/>
+      <Recv/>
+    </agent>
+    <agent agentType="flood" devicetype="car" id="4">
+      <battery capacityremaining="2996.0" maxcapacity="3000"/>
+      <interface active="true" avalibleBandwidth="30000" maxBandwidth="30000" type="wifi"/>
+      <storage currentSize="0" freeSpace="5000" maxSize="5000"/>
+      <userAgent satisfied="false"/>
+      <position x="1989.47838996519" y="1047.874504522972"/>
+      <Sent/>
+      <Recv/>
+    </agent>
+    <agent agentType="flood" devicetype="car" id="5">
+      <battery capacityremaining="2996.0" maxcapacity="3000"/>
+      <interface active="true" avalibleBandwidth="30000" maxBandwidth="30000" type="wifi"/>
+      <storage currentSize="0" freeSpace="5000" maxSize="5000"/>
+      <userAgent satisfied="false"/>
+      <position x="1566.0753549506983" y="434.78787199763883"/>
+      <Sent/>
+      <Recv/>
+    </agent>
+    <agent agentType="flood" devicetype="car" id="6">
+      <battery capacityremaining="2995.5" maxcapacity="3000"/>
+      <interface active="true" avalibleBandwidth="30000" maxBandwidth="30000" type="wifi"/>
+      <storage currentSize="0" freeSpace="5000" maxSize="5000"/>
+      <userAgent satisfied="false"/>
+      <position x="1548.7259228941114" y="330.29981251650383"/>
+      <Sent/>
+      <Recv/>
+    </agent>
+  </Step>
+</Simulation>

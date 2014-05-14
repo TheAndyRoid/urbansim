@@ -1,0 +1,6 @@
+<?xml version="1.0"?>
+<flood>
+  <class name="urbansim.MyAgent"/>
+  <floodgenericdatahere/>
+</flood>
+

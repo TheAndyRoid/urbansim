@@ -1,0 +1,110 @@
+
+R version 2.15.2 (2012-10-26) -- "Trick or Treat"
+Copyright (C) 2012 The R Foundation for Statistical Computing
+ISBN 3-900051-07-0
+Platform: x86_64-pc-linux-gnu (64-bit)
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+  Natural language support but running in an English locale
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+[Previously saved workspace restored]
+
+> library(XML)
+> library(gtools)
+> 
+> 
+> 
+> 
+> 
+> 
+> calculateBandwidthAgent <- function(agent){
++          i = xmlChildren(agent)[c("interface")]	
++ 	 ab = xmlGetAttr(i[[1]],"avalibleBandwidth")
++ 	 mb = xmlGetAttr(i[[1]],"maxBandwidth")
++ 	 ab = as.double(ab)
++ 	 mb = as.double(mb)
++ 	 return (mb-ab)
++ }
+> 
+> calculateBandwidthStep <- function(step){
++         agents = getNodeSet(step, "//agent")
++ 	total = 0.0
++ 	for (agent in agents){
++ 	    total = total + calculateBandwidthAgent(agent)
++ 	}
++ 	return (total)
++ 	}
+> 
+> calcSatisfaction <- function(step){
++ 		 agents = getNodeSet(step, "//agent")
++ 		  total = 0.0
++ 		  for(agent in agents){
++ 		     ua = xmlChildren(agent)[c("userAgent")]
++ 		     s = xmlGetAttr(ua[[1]],"satisfied")	
++ 		     if("true" == s){
++ 		     total = total + 1.0
++ 		     }		  
++ 		  }
++ 		  return ((total/length(agents))*100.0)
++       }
+> 
+> countAgents <- function(step){
++ 		 agents = getNodeSet(step, "//agent")		 
++ 		  return (length(agents))
++       }
+> 
+> 
+> mav <- function(x,n=5){filter(x,rep(1/n,n), sides=2)}
+> 
+> 
+> 
+> 
+> bandwidth = c()
+> satisfaction = c()
+> agents = c()
+> 
+> setwd("/home/andyroid/uni/cs4526/Application/test/lesscars/data/chart")
+> 
+> 
+> files = list.files()
+> files = mixedsort(files)
+> 
+> for(file in files){
++ xml = xmlInternalTreeParse(file)
++ 
++ 
++ steps = getNodeSet(xml, "//Step")
++ 
++ 
++ for(step in steps){
++ 	bandwidth[length(bandwidth)+1] <- calculateBandwidthStep(step)	 
++ 	satisfaction[length(satisfaction)+1] <- calcSatisfaction(step)
++ 	agents[length(agents)+1] <- countAgents(step)
++ }
++ }
+> 
+> 
+> total = 0
+> for(a in agents){
++       total = total + a
++ }
+> averageAgents = total/length(agents)
+> print (averageAgents)
+[1] 64.61556
+> 
+> 
+> setwd("/home/andyroid/uni/cs4526/Application/lesscars/control")
+Error in setwd("/home/andyroid/uni/cs4526/Application/lesscars/control") : 
+  cannot change working directory
+Execution halted

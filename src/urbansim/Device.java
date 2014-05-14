@@ -63,7 +63,7 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 	
 	private int stepTime = 1000;
 
-	private int range = 50;
+	
 
 	private Lock running = new ReentrantLock();
 	
@@ -71,7 +71,7 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 	private double startTime = 0;
 	private double agentTime = 0;
 
-	private int sleepTime = 0;
+
 
 	private SimplePortrayal2D portrayal;
 	private Color colour;
@@ -161,21 +161,17 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 							}
 							
 							if(bitsSent<0){
-								System.out.println("Sent negative bits - how");
+								System.out.println("Sent negative bits - ERROR");
 							}
 							
 							
 							Edge c = findEdge(dst);
 							if (c == null) {
-								System.out
-										.println("Connection does not exist?");
+								//System.out.println("Connection does not exist?");
 							} else {
 								Double dataSent = (Double) c.getInfo();
 								
 								dataSent += bitsSent;
-								if(dataSent>1500){
-									System.out.println("Sent more than possible ever");
-								}
 								c.setInfo(dataSent);
 							}
 							// System.out.println("ProcessBuffer "
@@ -354,7 +350,7 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 			startTime = newStartTime;
 			battery.update(startTime);
 			
-			updateConsumables();
+		
 			
 			if (agentTime < startTime) {
 				agentTime = startTime;
@@ -362,23 +358,7 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 		}
 
 	}
-	/*
-	 * Updates battery drain and resets bandwidth.
-	 */
-	private void updateConsumables() {
-		
-		
-		
-			
-			
-			
-		
-		
-		
-		
-		//calculate the battery to start time
-	}
-	
+
 	
 
 	/*
@@ -386,10 +366,8 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 	 * If the agent time is before this step the agent time is increased. If the agent time is after 
 	 * the agent is asleep or has used more processing time and must wait.
 	 * The battery power for the device is also checked to make sure that the device has battery
-	 * the main function is timed for battery drain (it is often so short that it's not measurable)
 	 */
-	public void step(SimState state) {
-		//update time
+	public void step(SimState state) {	
 		
 		
 		running.lock();
@@ -408,9 +386,8 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 						}
 
 					} while ((agentTime < (startTime + stepTime))
-							&& !recvBuffer.isEmpty() && coRun);
-					// update connections ui
-
+							 && coRun && battery.hasPower());
+					
 				}
 
 			} else if (battery.hasPower() == false
@@ -501,21 +478,17 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 		}
 
 		
-		//Create storage
-		
-				storage = new LongTermStorage(storageFile);
-				
-				// Create Interface
+		// Create storage
 
-				wirelessInterface = new WirelessConnection(deviceInterface);
-				
-				//Create Battery
-				battery = new Battery(deviceBattery,
-							cpuDrain,
-							cpusleepDrain,
-								wirelessInterface.getScanDrain(),
-								wirelessInterface.getDrain());
-		
+		storage = new LongTermStorage(storageFile);
+
+		// Create Interface
+
+		wirelessInterface = new WirelessConnection(deviceInterface);
+
+		// Create Battery
+		battery = new Battery(deviceBattery, cpuDrain, cpusleepDrain,
+				wirelessInterface.getScanDrain(), wirelessInterface.getDrain());
 		
 		
 		// Create agent
@@ -995,16 +968,29 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 		synchronized(wirelessInterface){
 		int local = wirelessInterface.requestBandwidth(bits);
 		int remote = dst.wirelessInterface.requestBandwidth(bits);
+		//get an idea about how much bandwidth is available and request the lowest ammount
 		if(local > remote){
-			dst.wirelessInterface.commitBandwidth(remote);
-			wirelessInterface.commitBandwidth(remote);
+			int remoteRet = dst.wirelessInterface.commitBandwidth(remote);
+			int localRet = wirelessInterface.commitBandwidth(remote);
+			//return the smaller amount that is guaranteed 
 //			System.out.println("Got " + remote);
-			return remote;
+			if(remoteRet >= localRet){
+				return localRet;
+			}else{
+				return remoteRet;
+			}
+		
 		}else{
-			dst.wirelessInterface.commitBandwidth(local);
-			wirelessInterface.commitBandwidth(local);
+			int remoteRet = dst.wirelessInterface.commitBandwidth(local);
+			int localRet = wirelessInterface.commitBandwidth(local);
 //			System.out.println("Got " + local);
-			return local;
+			//return the smaller amount that is guaranteed 
+			if(remoteRet >= localRet){
+				return localRet;
+			}else{
+				return remoteRet;
+			}
+		
 		}
 		}
 	}
@@ -1032,7 +1018,7 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 
 				int sentbits = sendTime(dst, msg, msg.size);
 				if(sentbits<0){
-					System.out.println("Sent negative bits - how");
+					System.out.println("Sent negative bits - Error");
 				}
 
 				synchronized (ammountSent) {
@@ -1058,9 +1044,7 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 					System.out.println("Connection does not exist");
 				} else {
 					Double dataSent = (Double) c.getInfo();
-					if(dataSent>1500){
-						System.out.println("Sent more than possible ever");
-					}
+					
 					dataSent += sentbits;
 					c.setInfo(dataSent);
 				}
@@ -1073,9 +1057,7 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 
 			} else if (!connectedTo(dst) || !inRange(dst)) {
 				// Error sending message not connected
-				battery.deviceSleep(agentTime);	
-				agentTime += 5;
-				battery.deviceActive(agentTime);	
+					
 				return -1;
 			} else if (sendingMessageTo(dst)) {
 				for (Message m : sendBuffer) {
@@ -1207,22 +1189,6 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 	
 	public Battery getBattery(){return battery;}
 
-	/*
-	 * Causes the agent to sleep at it current position of execution.Receiving a
-	 * new message will wake up the agent.
-	 */
-	public void sleep() throws SuspendExecution,StopException {
-		isRunning();
-		agentTime++;		
-		if(agentTime > (stepTime + startTime)){
-			//update to start of next simulation step only
-			battery.deviceSleep(stepTime + startTime);	
-		}else{
-			//safe to sleep
-			battery.deviceSleep(agentTime);	
-		}	
-		Coroutine.yield();
-	}
 
 	/*
 	 * Increases agentTime by the corresponding amount. Causes the agent to not
@@ -1239,7 +1205,12 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 			battery.deviceSleep(agentTime);	
 		}
 		agentTime += millaseconds;
-		Coroutine.yield();
+		if(agentTime < (stepTime + startTime)){
+			battery.deviceActive(agentTime);	
+			return;
+		}else{
+			Coroutine.yield();
+		}
 	}
 
 	@Override
@@ -1337,6 +1308,7 @@ public class Device extends ToXML implements Steppable, PhysicalComponent,
 		//Log battery
 		battery.toXML(agentElement,doc);
 		wirelessInterface.toXML(agentElement,doc);
+		storage.toXML(agentElement,doc);
 		
 			
 		

@@ -48,11 +48,14 @@
         <path refid="Simulator.classpath"/>
         <pathelement location="."/>
     </path>
+    <path id="run.Console.classpath">
+        <path refid="Simulator.classpath"/>
+        <pathelement location="."/>
+    </path>
     <target name="init">
         <mkdir dir="jar/"/>
         <copy includeemptydirs="false" todir="jar/">
             <fileset dir="src">
-                <exclude name="**/*.launch"/>
                 <exclude name="**/*.java"/>
             </fileset>
         </copy>
@@ -86,17 +89,16 @@
     </target>
     <target name="Console">
         <java classname="urbansim.UrbanSimWithUI" failonerror="true" fork="yes">
-            <jvmarg line="-Xmx300m&#10;-Dit.polito.appeal.traci.tcp_nodelay=true"/>
+            <jvmarg line="-Xmx1024m&#10;-Xms512m&#10;-Dit.polito.appeal.traci.tcp_nodelay=true&#10;-javaagent:lib/continuations-java/dist/Continuations_full.jar"/>
+            <arg line="-file &quot;test/control/case.xml&quot;"/>
             <classpath refid="run.Console.classpath"/>
         </java>
     </target>
-              	 <taskdef name="continuations"
-              	       classname="de.matthiasmann.continuations.instrument.InstrumentationTask"
-              	     classpath="lib/continuations-java/lib/asm-all-4.0.jar:lib/continuations-java/dist/Continuations.jar:lib/continuations-java/build/classes:jar/urbansim"/>
-              	    
-              	    <target name="-post-compile">
-              	      <continuations verbose="true">
-              	        <fileset dir="Simulator/jar"/>
-              	      </continuations>
-              	    </target>
+    <target name="Console">
+        <java classname="urbansim.UrbanSimWithUI" failonerror="true" fork="yes">
+            <jvmarg line="-Xmx1024m&#10;-Xms512m&#10;-Dit.polito.appeal.traci.tcp_nodelay=true&#10;-javaagent:lib/continuations-java/dist/Continuations_full.jar"/>
+            <arg line="-file &quot;test/control/case.xml&quot;"/>
+            <classpath refid="run.Console.classpath"/>
+        </java>
+    </target>
 </project>

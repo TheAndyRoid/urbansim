@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<wifi>
+  <concurentConnections c='3'/>
+  <compatableWith>
+    <wifi/>
+    <superwifi/>
+  </compatableWith>
+  <handshake ms="2"/>
+  <bitrateAtDistance>
+    <point  meters='0' kbps='20480'/>
+    <point  meters='10' kbps='15360'/>
+    <point  meters='20' kbps='9216'/>
+    <point  meters='30' kbps='5120'/>
+    <point  meters='37' kbps='0'/>
+  </bitrateAtDistance>
+  <scanTime ms='100'/>
+  <drain mahs='5'/>
+  <bandwidth kbps="30000"/>
+  <startuptime ms="50"/>
+  <shutdowntime ms="50"/>
+  <scanDrain mahs='0'/>
+</wifi>
+
